@@ -1,0 +1,648 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["accountability", "auth", "cron"]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model accountability_partners {
+  id                                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                                       String    @db.Uuid
+  partner_id                                    String    @db.Uuid
+  status                                        String?   @default("PENDING") @db.VarChar(20)
+  created_at                                    DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                                    DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  user_accountability_partners_partner_idTouser user      @relation("accountability_partners_partner_idTouser", fields: [partner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_accountability_partners_partner")
+  user_accountability_partners_user_idTouser    user      @relation("accountability_partners_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_accountability_partners_user")
+
+  @@unique([user_id, partner_id], map: "unique_partnership")
+  @@index([partner_id], map: "idx_accountability_partners_partner_id")
+  @@index([user_id], map: "idx_accountability_partners_user_id")
+  @@schema("accountability")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model date_ratings {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dating_history_id String         @db.Uuid
+  rater_id          String         @db.Uuid
+  rating            Int?
+  feedback          String?
+  categories        Json?          @default("{\"overall\": 0, \"respect\": 0, \"chemistry\": 0, \"communication\": 0, \"compatibility\": 0}")
+  created_at        DateTime?      @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at        DateTime?      @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  dating_history    dating_history @relation(fields: [dating_history_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_date_ratings_dating_history")
+  user              user           @relation(fields: [rater_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_date_ratings_rater")
+
+  @@index([dating_history_id], map: "idx_date_ratings_dating_history_id")
+  @@index([rater_id], map: "idx_date_ratings_rater_id")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dating_history {
+  id                                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                                  String         @db.Uuid
+  date_person_id                           String         @db.Uuid
+  date_started_at                          DateTime       @db.Timestamptz(6)
+  date_ended_at                            DateTime?      @db.Timestamptz(6)
+  status                                   String?        @default("ACTIVE") @db.VarChar(20)
+  created_at                               DateTime?      @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                               DateTime?      @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  date_ratings                             date_ratings[]
+  user_dating_history_date_person_idTouser user           @relation("dating_history_date_person_idTouser", fields: [date_person_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dating_history_date_person")
+  user_dating_history_user_idTouser        user           @relation("dating_history_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dating_history_user")
+
+  @@index([date_person_id], map: "idx_dating_history_date_person_id")
+  @@index([user_id], map: "idx_dating_history_user_id")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dating_profiles {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String    @db.Uuid
+  bio                String?
+  relationship_goals String[]  @default([])
+  deal_breakers      String[]  @default([])
+  created_at         DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at         DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  user               user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dating_profile_user")
+
+  @@index([user_id], map: "idx_dating_profiles_user_id")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model message_attachments {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id String    @db.Uuid
+  file_url   String
+  file_type  String?   @db.VarChar(50)
+  file_size  Int?
+  created_at DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  messages   messages  @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_message_attachments_message")
+
+  @@index([message_id], map: "idx_message_attachments_message")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model messages {
+  id                              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id                       String                @db.Uuid
+  receiver_id                     String                @db.Uuid
+  content                         String
+  is_read                         Boolean?              @default(false)
+  read_at                         DateTime?             @db.Timestamptz(6)
+  created_at                      DateTime?             @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                      DateTime?             @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  message_attachments             message_attachments[]
+  user_messages_receiver_idTouser user                  @relation("messages_receiver_idTouser", fields: [receiver_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_messages_receiver")
+  user_messages_sender_idTouser   user                  @relation("messages_sender_idTouser", fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_messages_sender")
+
+  @@index([created_at], map: "idx_messages_created_at")
+  @@index([is_read], map: "idx_messages_is_read")
+  @@index([receiver_id], map: "idx_messages_receiver")
+  @@index([sender_id], map: "idx_messages_sender")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subscriptions {
+  id                     String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String                    @unique @db.Uuid
+  status                 subscription_status_enum? @default(TRIAL)
+  theme_ids              String[]                  @default(["dating"])
+  preferred_time         DateTime?                 @default(dbgenerated("'09:00:00'::time without time zone")) @db.Time(6)
+  frequency              String?                   @default("DAILY") @db.VarChar(20)
+  trial_ends_at          DateTime?                 @default(dbgenerated("((now() AT TIME ZONE 'utc+4'::text) + '15 days'::interval)")) @db.Timestamptz(6)
+  last_message_at        DateTime?                 @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  next_message_at        DateTime?                 @default(dbgenerated("((now() AT TIME ZONE 'utc+4'::text) + '1 day'::interval)")) @db.Timestamptz(6)
+  subscription_ends_at   DateTime?                 @default(dbgenerated("((now() AT TIME ZONE 'utc+4'::text) + '15 days'::interval)")) @db.Timestamptz(6)
+  payment_status         String?                   @db.VarChar(20)
+  stripe_customer_id     String?                   @db.VarChar(50)
+  stripe_subscription_id String?                   @db.VarChar(50)
+  subscription_plan      user_plan_enum?           @default(STARTER)
+  family_plan            String[]                  @default([])
+  family_count           Int?                      @default(dbgenerated("array_length(family_plan, 1)"))
+  congregation           String[]                  @default([])
+  created_at             DateTime?                 @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at             DateTime?                 @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  cancelled_at           DateTime?                 @db.Timestamptz(6)
+  user                   user                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_subscriptions_user")
+
+  @@index([family_count], map: "idx_subscriptions_family_count")
+  @@index([status], map: "idx_subscriptions_status")
+  @@index([subscription_plan], map: "idx_subscriptions_subscription_plan")
+  @@index([theme_ids], map: "idx_subscriptions_theme_ids", type: Gin)
+  @@index([user_id], map: "idx_subscriptions_user_id")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage {
+  user_id String   @db.Uuid
+  date    DateTime @db.Date
+  count   Int      @default(0)
+  user    user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_usage_user")
+
+  @@id([user_id, date])
+  @@index([user_id, date], map: "idx_usage_user_date")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage_monthly {
+  user_id       String   @db.Uuid
+  month         DateTime @db.Date
+  count         Int?     @default(0)
+  count_by_date Json?    @default("{}")
+  user          user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_usage_monthly_user")
+
+  @@id([user_id, month])
+  @@index([user_id, month], map: "idx_usage_monthly_user_month")
+  @@schema("accountability")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user {
+  id                                                               String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                            String                    @unique
+  first_name                                                       String?
+  last_name                                                        String?
+  phone                                                            String?
+  role                                                             user_role_enum?           @default(USER)
+  subscription_status                                              subscription_status_enum? @default(TRIAL)
+  timezone                                                         String?                   @default("America/New_York") @db.VarChar(50)
+  text_message_time                                                String?                   @db.VarChar(8)
+  created_at                                                       DateTime?                 @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                                                       DateTime?                 @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  accountability_partners_accountability_partners_partner_idTouser accountability_partners[] @relation("accountability_partners_partner_idTouser")
+  accountability_partners_accountability_partners_user_idTouser    accountability_partners[] @relation("accountability_partners_user_idTouser")
+  date_ratings                                                     date_ratings[]
+  dating_history_dating_history_date_person_idTouser               dating_history[]          @relation("dating_history_date_person_idTouser")
+  dating_history_dating_history_user_idTouser                      dating_history[]          @relation("dating_history_user_idTouser")
+  dating_profiles                                                  dating_profiles[]
+  messages_messages_receiver_idTouser                              messages[]                @relation("messages_receiver_idTouser")
+  messages_messages_sender_idTouser                                messages[]                @relation("messages_sender_idTouser")
+  subscriptions                                                    subscriptions?
+  usage                                                            usage[]
+  usage_monthly                                                    usage_monthly[]
+  user_matches_user_matches_matched_user_idTouser                  user_matches[]            @relation("user_matches_matched_user_idTouser")
+  user_matches_user_matches_user_idTouser                          user_matches[]            @relation("user_matches_user_idTouser")
+  user_preferences                                                 user_preferences?
+
+  @@index([email], map: "idx_user_email")
+  @@index([role], map: "idx_user_role")
+  @@index([subscription_status], map: "idx_user_subscription_status")
+  @@index([text_message_time], map: "idx_user_text_message_time")
+  @@index([timezone], map: "idx_user_timezone")
+  @@schema("accountability")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_matches {
+  id                                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                                 String    @db.Uuid
+  matched_user_id                         String    @db.Uuid
+  match_status                            String?   @default("PENDING") @db.VarChar(20)
+  match_score                             Float?
+  created_at                              DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                              DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  user_user_matches_matched_user_idTouser user      @relation("user_matches_matched_user_idTouser", fields: [matched_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_matches_matched_user")
+  user_user_matches_user_idTouser         user      @relation("user_matches_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_matches_user")
+
+  @@unique([user_id, matched_user_id], map: "unique_match")
+  @@index([matched_user_id], map: "idx_user_matches_matched_user")
+  @@index([match_status], map: "idx_user_matches_status")
+  @@index([user_id], map: "idx_user_matches_user")
+  @@schema("accountability")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_preferences {
+  id                        String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String                  @unique @db.Uuid
+  theme_preferences         String[]                @default(["light"])
+  blocked_themes            String[]                @default([])
+  message_length_preference String?                 @default("MEDIUM") @db.VarChar(20)
+  gender                    gender_enum?
+  dating_preference         dating_preference_enum?
+  relationship_type         relationship_type_enum?
+  age_preference_min        Int?
+  age_preference_max        Int?
+  location_preference       Json?                   @default("{\"unit\": \"miles\", \"radius\": 50, \"coordinates\": null}")
+  deal_breakers             String[]                @default([])
+  interests                 String[]                @default([])
+  notification_preferences  Json?                   @default("{\"likes\": true, \"messages\": true, \"new_matches\": true, \"profile_views\": true}")
+  privacy_settings          Json?                   @default("{\"show_age\": true, \"show_distance\": true, \"show_last_active\": true, \"show_online_status\": true}")
+  created_at                DateTime?               @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                DateTime?               @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  user                      user                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_preferences_user")
+
+  @@index([blocked_themes], map: "idx_user_preferences_blocked_themes", type: Gin)
+  @@index([dating_preference], map: "idx_user_preferences_dating_preference")
+  @@index([deal_breakers], map: "idx_user_preferences_deal_breakers", type: Gin)
+  @@index([gender], map: "idx_user_preferences_gender")
+  @@index([interests], map: "idx_user_preferences_interests", type: Gin)
+  @@index([relationship_type], map: "idx_user_preferences_relationship_type")
+  @@index([theme_preferences], map: "idx_user_preferences_theme", type: Gin)
+  @@index([user_id], map: "idx_user_preferences_user_id")
+  @@schema("accountability")
+}
+
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+model flow_state {
+  id                     String                @id @db.Uuid
+  user_id                String?               @db.Uuid
+  auth_code              String
+  code_challenge_method  code_challenge_method
+  code_challenge         String
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?             @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at             DateTime?             @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?             @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
+}
+
+model identities {
+  id              String    @id @db.Uuid
+  provider_id     String
+  user_id         String    @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  email           String?
+
+  @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
+  @@index([email])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+model mfa_amr_claims {
+  session_id            String    @db.Uuid
+  created_at            DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at            DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  authentication_method String
+  id                    String    @id(map: "amr_id_pk") @db.Uuid
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+model mfa_challenges {
+  id         String    @id @db.Uuid
+  factor_id  String    @db.Uuid
+  created_at DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  ip_address String    @db.Inet
+  otp_code   String?
+  updated_at DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
+  @@schema("auth")
+}
+
+model mfa_factors {
+  id                 String        @id @db.Uuid
+  user_id            String        @db.Uuid
+  friendly_name      String?
+  factor_type        factor_type
+  status             factor_status
+  created_at         DateTime?     @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at         DateTime?     @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  secret             String?
+  phone              String?
+  last_challenged_at DateTime?     @unique @db.Timestamptz(6)
+
+  @@unique([user_id, phone], map: "unique_phone_factor_per_user")
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model one_time_tokens {
+  id         String              @id @db.Uuid
+  user_id    String              @db.Uuid
+  token_type one_time_token_type
+  token_hash String              @unique
+  relates_to String
+  created_at DateTime?           @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at DateTime?           @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+
+  @@unique([user_id, token_type])
+  @@index([relates_to], map: "one_time_tokens_relates_to_hash_idx", type: Hash)
+  @@index([token_hash], map: "one_time_tokens_token_hash_hash_idx", type: Hash)
+  @@schema("auth")
+}
+
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
+  @@schema("auth")
+}
+
+model saml_providers {
+  id                String    @id @db.Uuid
+  sso_provider_id   String    @db.Uuid
+  entity_id         String    @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at        DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  name_id_format    String?
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model saml_relay_states {
+  id              String    @id @db.Uuid
+  sso_provider_id String    @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  created_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  flow_state_id   String?   @db.Uuid
+
+  @@index([created_at(sort: Desc)])
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+model sessions {
+  id           String     @id @db.Uuid
+  user_id      String     @db.Uuid
+  created_at   DateTime?  @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at   DateTime?  @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  factor_id    String?    @db.Uuid
+  aal          aal_level?
+  not_after    DateTime?  @db.Timestamptz(6)
+  refreshed_at DateTime?  @db.Timestamp(6)
+  user_agent   String?
+  ip           String?    @db.Inet
+  tag          String?
+
+  @@index([not_after(sort: Desc)])
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+model sso_domains {
+  id              String    @id @db.Uuid
+  sso_provider_id String    @db.Uuid
+  domain          String
+  created_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at      DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+model sso_providers {
+  id          String    @id @db.Uuid
+  resource_id String?
+  created_at  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+model users {
+  instance_id                 String?   @db.Uuid
+  id                          String    @id @db.Uuid
+  aud                         String?   @db.VarChar(255)
+  role                        String?   @db.VarChar(255)
+  email                       String?   @unique
+  encrypted_password          String?   @db.VarChar(255)
+  email_confirmed_at          DateTime? @db.Timestamptz(6)
+  invited_at                  DateTime? @db.Timestamptz(6)
+  confirmation_token          String?   @db.VarChar(255)
+  confirmation_sent_at        DateTime? @db.Timestamptz(6)
+  recovery_token              String?   @db.VarChar(255)
+  recovery_sent_at            DateTime? @db.Timestamptz(6)
+  email_change_token_new      String?   @db.VarChar(255)
+  email_change                String?   @db.VarChar(255)
+  email_change_sent_at        DateTime? @db.Timestamptz(6)
+  last_sign_in_at             DateTime? @db.Timestamptz(6)
+  raw_app_meta_data           Json?
+  raw_user_meta_data          Json?
+  is_super_admin              Boolean?
+  created_at                  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  updated_at                  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc+4'::text)")) @db.Timestamptz(6)
+  phone                       String?
+  phone_confirmed_at          DateTime? @db.Timestamptz(6)
+  phone_change                String?   @default("")
+  phone_change_token          String?   @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime? @db.Timestamptz(6)
+  email_change_token_current  String?   @default("") @db.VarChar(255)
+  email_change_confirm_status Int?      @default(0) @db.SmallInt
+  banned_until                DateTime? @db.Timestamptz(6)
+  reauthentication_token      String?   @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime? @db.Timestamptz(6)
+  is_sso_user                 Boolean   @default(false)
+  deleted_at                  DateTime? @db.Timestamptz(6)
+  is_anonymous                Boolean   @default(false)
+  confirmed_at                DateTime? @db.Timestamptz(6)
+  first_name                  String?
+  last_name                   String?
+  name                        String?   @db.VarChar(255)
+  users                       users     @relation("usersTousers", fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users                 users?    @relation("usersTousers")
+
+  @@index([id], map: "idx_auth_users_id")
+  @@index([instance_id])
+  @@index([is_anonymous])
+  @@schema("auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model job {
+  jobid    BigInt  @id @default(autoincrement())
+  schedule String
+  command  String
+  nodename String  @default("localhost")
+  nodeport Int     @default(dbgenerated("inet_server_port()"))
+  database String  @default(dbgenerated("current_database()"))
+  username String  @default(dbgenerated("CURRENT_USER"))
+  active   Boolean @default(true)
+  jobname  String?
+
+  @@unique([jobname, username], map: "jobname_username_uniq")
+  @@schema("cron")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model job_run_details {
+  jobid          BigInt?
+  runid          BigInt    @id @default(autoincrement())
+  job_pid        Int?
+  database       String?
+  username       String?
+  command        String?
+  status         String?
+  return_message String?
+  start_time     DateTime? @db.Timestamptz(6)
+  end_time       DateTime? @db.Timestamptz(6)
+
+  @@schema("cron")
+}
+
+enum dating_preference_enum {
+  MEN
+  WOMEN
+  BOTH
+  NON_BINARY
+  ALL
+
+  @@schema("accountability")
+}
+
+enum gender_enum {
+  MALE
+  FEMALE
+  NON_BINARY
+  TRANS_MALE
+  TRANS_FEMALE
+  OTHER
+
+  @@schema("accountability")
+}
+
+enum relationship_type_enum {
+  CASUAL
+  SERIOUS
+  MARRIAGE
+  FRIENDSHIP
+
+  @@schema("accountability")
+}
+
+enum subscription_status_enum {
+  TRIAL
+  ACTIVE
+  CANCELLED
+  EXPIRED
+
+  @@schema("accountability")
+}
+
+enum user_plan_enum {
+  STARTER
+  PREMIUM
+  FAMILY
+
+  @@schema("accountability")
+}
+
+enum user_role_enum {
+  USER
+  ADMIN
+  MODERATOR
+
+  @@schema("accountability")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+  phone
+
+  @@schema("auth")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chart background -->
+  <rect x="6" y="6" width="24" height="24" rx="2" stroke="#6B46C1" stroke-width="2"/>
+  
+  <!-- Prayer count bars -->
+  <path d="M10 26V20" stroke="#6B46C1" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 26V16" stroke="#6B46C1" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 26V12" stroke="#6B46C1" stroke-width="3" stroke-linecap="round"/>
+  <path d="M28 26V8" stroke="#6B46C1" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Praying hands icon -->
+  <path d="M14 10C14 10 15 11 18 11C21 11 22 10 22 10" stroke="#6B46C1" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Count indicators -->
+  <circle cx="28" cy="8" r="2" fill="#6B46C1"/>
+  <circle cx="22" cy="12" r="2" fill="#6B46C1"/>
+</svg> 

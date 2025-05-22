@@ -1,0 +1,103 @@
+TimeZone,UTC offset,name
+Pacific/Midway,UTC-11:00,Midway Island American Samoa
+Pacific/Honolulu,UTC-10:00,Hawaii
+America/Anchorage,UTC-08:00,Alaska
+America/Tijuana,UTC-07:00,Baja California
+America/Los_Angeles,UTC-07:00,Pacific Time US and Canada)
+America/Phoenix,UTC-07:00,Arizona
+America/Chihuahua,UTC-06:00,Chihuahua La Paz Mazatlan
+America/Denver,UTC-06:00,Mountain Time US and Canada)
+America/Belize,UTC-06:00,Central America
+America/Chicago,UTC-05:00,Central Time US and Canada)	
+America/Mexico_City,UTC-05:00,Guadalajara Mexico City Monterrey
+America/Regina,UTC-06:00,Saskatchewan
+America/Bogota,UTC-05:00,Bogota Lima Quito
+America/Jamaica,UTC-05:00,Kingston George Town
+America/New_York,UTC-04:00,Eastern Time US and Canada)
+America/Indiana/Indianapolis,UTC-04:00,Indiana East)
+America/Caracas,UTC-04:30,Caracas
+America/Asuncion,UTC-03:00,Asuncion
+America/Halifax,UTC-03:00,Atlantic Time Canada)
+America/Cuiaba,UTC-04:00,Cuiaba
+America/Manaus,UTC-04:00,Georgetown La Paz Manaus San Juan
+America/St_Johns,UTC-02:30,Newfoundland and Labrador
+America/Sao_Paulo,UTC-03:00,Brasilia
+America/Buenos_Aires,UTC-03:00,Buenos Aires
+America/Cayenne,UTC-03:00,Cayenne Fortaleza
+America/Godthab,UTC-02:00,Greenland
+America/Montevideo,UTC-03:00,Montevideo
+America/Bahia,UTC-03:00,Salvador
+America/Santiago,UTC-03:00,Santiago
+America/Noronha,UTC-02:00,Mid-Atlantic
+Atlantic/Azores,UTC+00:00,Azores
+Atlantic/Cape_Verde,UTC-01:00,Cape Verde Islands
+Europe/London,UTC+01:00,Dublin Edinburgh Lisbon London
+Africa/Casablanca,UTC+01:00,Casablanca
+Africa/Monrovia,UTC+00:00,Monrovia Reykjavik
+Europe/Amsterdam,UTC+02:00,Amsterdam Berlin Bern Rome Stockholm Vienna
+Europe/Belgrade,UTC+02:00,Belgrade Bratislava Budapest Ljubljana Prague
+Europe/Brussels,UTC+02:00,Brussels Copenhagen Madrid Paris
+Europe/Warsaw,UTC+02:00,Sarajevo Skopje Warsaw Zagreb
+Africa/Algiers,UTC+01:00,West Central Africa
+Africa/Windhoek,UTC+02:00,Windhoek
+Europe/Athens,UTC+03:00,Athens Bucharest
+Asia/Beirut,UTC+03:00,Beirut
+Africa/Cairo,UTC+02:00,Cairo
+Asia/Damascus,UTC+03:00,Damascus
+EET,UTC+03:00,Eastern Europe
+Africa/Harare,UTC+02:00,Harare Pretoria
+Europe/Helsinki,UTC+03:00,Helsinki Kiev Riga Sofia Tallinn Vilnius
+Asia/Istanbul,UTC+03:00,Istanbul
+Asia/Jerusalem,UTC+03:00,Jerusalem
+Europe/Kaliningrad,UTC+02:00,Kaliningrad
+Africa/Tripoli,UTC+02:00,Tripoli
+Asia/Amman,UTC+03:00,Amman
+Asia/Baghdad,UTC+03:00,Baghdad
+Asia/Kuwait,UTC+03:00,Kuwait Riyadh
+Europe/Minsk,UTC+03:00,Minsk
+Europe/Moscow,UTC+03:00,Moscow St. Petersburg Volgograd
+Africa/Nairobi,UTC+03:00,Nairobi
+Asia/Tehran,UTC+03:30,Tehran
+Asia/Muscat,UTC+04:00,Abu Dhabi Muscat
+Asia/Baku,UTC+05:00,Baku
+Europe/Samara,UTC+04:00,Izhevsk Samara
+Indian/Mauritius,UTC+04:00,Port Louis
+Asia/Tbilisi,UTC+04:00,Tbilisi
+Asia/Yerevan,UTC+04:00,Yerevan
+Asia/Kabul,UTC+04:30,Kabul
+Asia/Tashkent,UTC+05:00,Tashkent Ashgabat
+Asia/Yekaterinburg,UTC+05:00,Ekaterinburg
+Asia/Karachi,UTC+05:00,Islamabad Karachi
+Asia/Kolkata,UTC+05:30,Chennai Kolkata Mumbai New Delhi
+Asia/Colombo,UTC+05:30,Sri Jayawardenepura
+Asia/Katmandu,UTC+05:45,Kathmandu
+Asia/Almaty,UTC+06:00,Astana
+Asia/Dhaka,UTC+06:00,Dhaka
+Asia/Novosibirsk,UTC+06:00,Novosibirsk
+Asia/Rangoon,UTC+06:30,Yangon Rangoon)
+Asia/Bangkok,UTC+07:00,Bangkok Hanoi Jakarta
+Asia/Krasnoyarsk,UTC+07:00,Krasnoyarsk
+Asia/Chongqing,UTC+08:00,Beijing Chongqing Hong Kong SAR Urumqi
+Asia/Irkutsk,UTC+08:00,Irkutsk
+Asia/Kuala_Lumpur,UTC+08:00,Kuala Lumpur Singapore
+Australia/Perth,UTC+08:00,Perth
+Asia/Taipei,UTC+08:00,Taipei
+Asia/Ulaanbaatar,UTC+08:00,Ulaanbaatar
+Asia/Tokyo,UTC+09:00,Osaka Sapporo Tokyo
+Asia/Seoul,UTC+09:00,Seoul
+Asia/Yakutsk,UTC+09:00,Yakutsk
+Australia/Adelaide,UTC+10:30,Adelaide
+Australia/Darwin,UTC+09:30,Darwin
+Australia/Brisbane,UTC+10:00,Brisbane
+Australia/Canberra,UTC+11:00,Canberra Melbourne Sydney
+Pacific/Guam,UTC+10:00,Guam Port Moresby
+Australia/Hobart,UTC+11:00,Hobart
+Asia/Magadan,UTC+10:00,Magadan
+Asia/Vladivostok,UTC+10:00,Vladivostok Magadan
+Asia/Srednekolymsk,UTC+11:00,Chokirdakh
+Pacific/Guadalcanal,UTC+11:00,Solomon Islands New Caledonia
+Asia/Anadyr,UTC+12:00,Anadyr Petropavlovsk-Kamchatsky
+Pacific/Auckland,UTC+13:00,Auckland Wellington
+Pacific/Fiji,UTC+12:00,Fiji Islands Kamchatka Marshall Islands
+Pacific/Tongatapu,UTC+13:00,Nuku'alofa
+Pacific/Apia,UTC+14:00,Samoa
