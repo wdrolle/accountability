@@ -95,19 +95,19 @@ BEGIN
         RAISE EXCEPTION 'User with email % does not exist in auth.users', '${email}';
     END IF;
 
-    -- Get user ID from agents.user
+    -- Get user ID from accountability.user
     SELECT u.id
     INTO v_user_id
-    FROM agents.user u
+    FROM accountability.user u
     WHERE u.id = v_auth_user_id;
 
-    -- If user exists in agents.user, delete all related records
+    -- If user exists in accountability.user, delete all related records
     IF FOUND THEN
         -- Disable triggers temporarily
         SET session_replication_role = 'replica';
 
-        -- Delete from agents schema with cascading
-        DELETE FROM agents.user WHERE id = v_user_id;
+        -- Delete from accountability schema with cascading
+        DELETE FROM accountability.user WHERE id = v_user_id;
 
         -- Delete from auth schema
         DELETE FROM auth.identities WHERE user_id = v_auth_user_id;

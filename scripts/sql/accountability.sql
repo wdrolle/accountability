@@ -60,8 +60,38 @@ CREATE TABLE user_preferences (
   location_preference JSONB DEFAULT '{"radius":50,"unit":"miles","coordinates":null}',
   deal_breakers           TEXT[] DEFAULT '{}',
   interests               TEXT[] DEFAULT '{}',
-  notification_preferences JSONB DEFAULT '{"new_matches":true,"messages":true,"profile_views":true,"likes":true}',
-  privacy_settings         JSONB DEFAULT '{"show_online_status":true,"show_last_active":true,"show_distance":true,"show_age":true}',
+  notification_preferences JSONB DEFAULT '{
+    "new_matches": true,
+    "messages": true,
+    "profile_views": true,
+    "likes": true,
+    "date_reminders": true,
+    "feedback_reminders": true
+  }',
+  privacy_settings         JSONB DEFAULT '{
+    "show_online_status": true,
+    "show_last_active": true,
+    "show_distance": true,
+    "show_age": true
+  }',
+  date_reminder_preferences JSONB DEFAULT '{
+    "reminder_before_date": true,
+    "reminder_after_date": true,
+    "reminder_before_hours": 24,
+    "reminder_after_hours": 24,
+    "feedback_reminder_days": 1
+  }',
+  feedback_preferences JSONB DEFAULT '{
+    "allow_anonymous_feedback": false,
+    "require_feedback": true,
+    "feedback_categories": [
+      "communication",
+      "respect",
+      "compatibility",
+      "chemistry",
+      "overall"
+    ]
+  }',
   created_at TIMESTAMPTZ   DEFAULT (now() AT TIME ZONE 'utc+4'),
   updated_at TIMESTAMPTZ   DEFAULT (now() AT TIME ZONE 'utc+4'),
   /* FK comes **after** column list so we keep commas right */
@@ -757,4 +787,69 @@ CREATE POLICY user_matches_update ON accountability.user_matches
 GRANT SELECT, INSERT, UPDATE ON accountability.messages TO authenticated;
 GRANT SELECT, INSERT ON accountability.message_attachments TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON accountability.user_matches TO authenticated;
+
+-- Create files_in_storage table
+CREATE TABLE IF NOT EXISTS accountability.files_in_storage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    file_url TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    embedded_till INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc+4'),
+    updated_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc+4'),
+    user_id UUID,
+    trained_models JSONB[] DEFAULT ARRAY[]::JSONB[],
+    comments JSONB[] DEFAULT ARRAY[]::JSONB[],
+    
+    CONSTRAINT fk_files_in_storage_user
+        FOREIGN KEY (user_id)
+        REFERENCES accountability."user"(id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+-- Create index for files_in_storage
+CREATE INDEX IF NOT EXISTS idx_files_in_storage_user_id 
+    ON accountability.files_in_storage(user_id);
+
+-- Create trigger for files_in_storage updated_at
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger t
+        JOIN pg_class c ON c.oid = t.tgrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE t.tgname = 'trg_update_files_in_storage_updated_at'
+          AND n.nspname = 'accountability'
+          AND c.relname = 'files_in_storage'
+    ) THEN
+        CREATE TRIGGER trg_update_files_in_storage_updated_at
+            BEFORE UPDATE ON accountability.files_in_storage
+            FOR EACH ROW
+            EXECUTE FUNCTION accountability.update_updated_at_column();
+    END IF;
+END;
+$$;
+
+-- Enable Row Level Security for files_in_storage
+ALTER TABLE accountability.files_in_storage ENABLE ROW LEVEL SECURITY;
+
+-- Files in storage policies
+DROP POLICY IF EXISTS files_in_storage_select ON accountability.files_in_storage;
+CREATE POLICY files_in_storage_select ON accountability.files_in_storage
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS files_in_storage_insert ON accountability.files_in_storage;
+CREATE POLICY files_in_storage_insert ON accountability.files_in_storage
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS files_in_storage_update ON accountability.files_in_storage;
+CREATE POLICY files_in_storage_update ON accountability.files_in_storage
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- Grant necessary permissions for files_in_storage
+GRANT SELECT, INSERT, UPDATE ON accountability.files_in_storage TO authenticated;
 

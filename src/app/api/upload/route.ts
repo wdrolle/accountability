@@ -54,14 +54,12 @@ export async function POST(request: Request) {
       const fileRecord = await prisma.files_in_storage.create({
         data: {
           id: fileId,
-          file_path: publicUrl,
-          file_name: file.name,
+          file_url: publicUrl,
+          filename: file.name,
+          embedded_till: 0,
+          trained_models: [],
+          comments: [],
           user_id: user.id,
-          file_type: file.type,
-          file_size: file.size,
-          metadata: {
-            embedded_till: 0
-          },
           created_at: new Date(),
           updated_at: new Date()
         }

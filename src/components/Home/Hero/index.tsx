@@ -52,9 +52,9 @@ const Hero = () => {
               Connect with Scripture, Family & Friends Through AI-Enhanced Discussions
             </h1>
             <p className="mx-auto mb-9 max-w-[600px] font-medium md:text-lg text-gray-400 dark:text-gray-400 light:text-black/80 transform hover:-translate-y-0.5 transition-transform">
-              Receive CStudios messages via SMS, engage in meaningful discussions 
-              with loved ones, and use AI-powered insights to deepen your understanding. 
-              Share, reflect, and grow together in faith and knowledge.
+              Experience daily scripture messages, engage in meaningful AI-powered discussions, 
+              and strengthen your spiritual journey with family and friends. Share insights, 
+              reflect on teachings, and grow together in faith through our innovative platform.
             </p>
 
             <div className="flex justify-center gap-4">
@@ -89,13 +89,13 @@ const Hero = () => {
         
         {/* Row 2 - Subtitles */}
         <div className="text-center">
-          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Scripture SMS</span>
+          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Scripture Messages</span>
         </div>
         <div className="text-center">
-          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Discussions</span>
+          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Spiritual Insights</span>
         </div>
         <div className="text-center">
-          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Sharing</span>
+          <span className="text-xs md:text-sm lg:text-base text-white/70 dark:text-white/70 light:text-black/80">Faith Sharing</span>
         </div>
       </div>
     </section>
