@@ -59,7 +59,7 @@ export async function GET() {
       leader: {
         name: `${group.user.first_name} ${group.user.last_name}`.trim() || 'Anonymous',
         image: group.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
           : '/placeholder-user.jpg'
       },
       member_count: group.agents_group_member.length,

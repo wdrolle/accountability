@@ -16,7 +16,7 @@ import prisma from '@/lib/prisma';
 const formatImageUrl = (image: string | null) => {
   if (!image) return '/placeholder-user.jpg';
   if (image.startsWith('http')) return image;
-  return `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${image}`;
+  return `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${image}`;
 };
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -167,7 +167,7 @@ export async function PUT(
       leader: {
         name: `${updatedGroup.user.first_name} ${updatedGroup.user.last_name}`.trim() || 'Anonymous',
         image: updatedGroup.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
           : '/images/logo/agents.png'
       },
       member_count: updatedGroup.agents_group_member.length,

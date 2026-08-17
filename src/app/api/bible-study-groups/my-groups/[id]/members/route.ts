@@ -149,7 +149,7 @@ export async function POST(request: Request) {
       leader: {
         name: `${updatedGroup.user.first_name} ${updatedGroup.user.last_name}`.trim() || 'Anonymous',
         image: updatedGroup.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
           : '/images/logo/agents.png'
       },
       member_count: updatedGroup.agents_group_member.length,
@@ -257,7 +257,7 @@ export async function DELETE(request: Request) {
       leader: {
         name: `${updatedGroup.user.first_name} ${updatedGroup.user.last_name}`.trim() || 'Anonymous',
         image: updatedGroup.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${updatedGroup.user.image}`
           : '/images/logo/agents.png'
       },
       member_count: updatedGroup.agents_group_member.length,

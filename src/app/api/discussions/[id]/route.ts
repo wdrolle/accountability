@@ -48,7 +48,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Get the complete image URL from the database
     const imageUrl = userData?.image ? 
-      `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${userData.image}` : 
+      `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${userData.image}` : 
       DEFAULT_USER_IMAGE;
 
     const formattedDiscussion = {
@@ -146,7 +146,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // Get the complete image URL from the database
     const imageUrl = userData?.image ? 
-      `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${userData.image}` : 
+      `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${userData.image}` : 
       DEFAULT_USER_IMAGE;
 
     const formattedDiscussion = {

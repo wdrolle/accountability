@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       leader: {
         name: `${group.user.first_name} ${group.user.last_name}`.trim() || 'Anonymous',
         image: group.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
           : '/images/logo/agents.png'
       },
       member_count: group.agents_group_member.length,
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
       leader: {
         name: `${group.user.first_name} ${group.user.last_name}`.trim() || 'Anonymous',
         image: group.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${group.user.image}`
           : '/images/logo/agents.png'
       },
       member_count: group.agents_group_member.length,

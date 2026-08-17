@@ -355,7 +355,7 @@ export default function UsersPage() {
                 src={
                   user.raw_app_meta_data?.avatar_url ||
                   (user.details.image
-                    ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${user.details.image}`
+                    ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${user.details.image}`
                     : null) ||
                   user.details.files_in_storage?.[0]?.file_url ||
                   '/images/fallback-image.jpg'

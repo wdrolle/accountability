@@ -38,7 +38,7 @@ function formatUserData(user: UserData | null) {
     id: user.id,
     name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Anonymous',
     image: user.image
-      ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${user.image}`
+      ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${user.image}`
       : '/images/logo/agents.png'
   };
 }

@@ -73,7 +73,7 @@ export function getVerificationEmailHtml(name: string, token: string) {
   return `
     <div style="font-family: Arial, sans-serif; padding: 10px; max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
       <header style="padding: 2rem; text-align: center; border-bottom: 2px solid #4F46E5;">
-        <img src="https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/email_logo/agents.png" alt="CStudios Logo" style="height: 40px; margin: 0 auto;">
+        <img src="https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/email_logo/agents.png" alt="CStudios Logo" style="height: 40px; margin: 0 auto;">
       </header>
 
       <main style="padding: 2rem;">

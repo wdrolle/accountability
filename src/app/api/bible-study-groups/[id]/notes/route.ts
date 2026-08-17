@@ -187,7 +187,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         id: note.user_id,
         name: note.user.name || `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() || 'Anonymous',
         image: note.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
           : '/images/logo/agents.png'
       },
       replies: note.agents_group_note_reply.map((reply) => ({
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           id: reply.user.id,
           name: reply.user.name || `${reply.user.first_name || ''} ${reply.user.last_name || ''}`.trim() || 'Anonymous',
           image: reply.user.image 
-            ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${reply.user.image}`
+            ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${reply.user.image}`
             : '/images/logo/agents.png'
         }
       }))
@@ -405,7 +405,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         id: note.user.id,
         name: note.user.name || `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() || 'Anonymous',
         image: note.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
           : '/images/logo/agents.png'
       }
     };

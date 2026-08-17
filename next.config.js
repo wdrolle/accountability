@@ -2,6 +2,8 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || "/accountability",
+  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "/accountability",
   reactStrictMode: true,
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
   typescript: {
@@ -13,7 +15,7 @@ const nextConfig = {
   images: {
     domains: [
       'cdn.sanity.io',
-      'fquqnvtknptzdycxyzug.supabase.co',
+      'fbsnszkmtillujdcwnnq.supabase.co',
       'localhost',
       '3000-01jgesrqxqw7pr48rhr6s37tms.cloudspaces.litng.ai'
     ],
@@ -66,6 +68,15 @@ const nextConfig = {
     }
 
     return config;
+  },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/date-accountability",
+        permanent: false,
+      },
+    ];
   },
   async rewrites() {
     return [];

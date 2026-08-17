@@ -159,7 +159,7 @@ export async function GET(
         id: note.user.id,
         name: `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() || 'Anonymous',
         image: note.user.image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${note.user.image}`
           : null,
       },
     }));
@@ -267,7 +267,7 @@ export async function POST(
         id: user[0].id,
         name: `${user[0].first_name} ${user[0].last_name}`.trim() || 'Anonymous',
         image: user[0].image 
-          ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${user[0].image}`
+          ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${user[0].image}`
           : null,
       },
     };

@@ -65,7 +65,7 @@ export async function GET(
       id: member.user_agents_group_member_user_idTouser.id,
       name: `${member.user_agents_group_member_user_idTouser.first_name} ${member.user_agents_group_member_user_idTouser.last_name}`.trim() || 'Anonymous',
       image: member.user_agents_group_member_user_idTouser.image 
-        ? `https://fquqnvtknptzdycxyzug.supabase.co/storage/v1/object/public/user_images/${member.user_agents_group_member_user_idTouser.image}`
+        ? `https://fbsnszkmtillujdcwnnq.supabase.co/storage/v1/object/public/user_images/${member.user_agents_group_member_user_idTouser.image}`
         : null,
       role: member.user_agents_group_member_user_idTouser.id === group.leader_id ? 'LEADER' : (member.role || 'MEMBER'),
       joined_at: member.joined_at,
