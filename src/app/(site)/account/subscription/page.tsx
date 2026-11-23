@@ -1,13 +1,12 @@
-// /account/subscription
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import Breadcrumb from '@/components/Breadcrumb';
-import { Card, Progress, Button, Badge } from '@heroui/react';
+import { Card, CardBody, CardHeader, Progress, Button, Chip } from '@heroui/react';
 import Link from 'next/link';
+import { appApiUrl } from '@/lib/journal';
 
 enum subscription_status_enum {
   ACTIVE = 'ACTIVE',
@@ -16,25 +15,19 @@ enum subscription_status_enum {
   TRIAL = 'TRIAL'
 }
 
-enum user_plan_enum {
-  STARTER = 'STARTER',
-  PREMIUM = 'PREMIUM',
-  FAMILY = 'FAMILY'
-}
-
 interface SubscriptionInfo {
   status: subscription_status_enum;
   plan: string;
   subscription_plan?: string;
   start_date: string;
   end_date: string;
-  usage: {
-    messages_sent: number;
-    messages_limit: number;
-    ai_chats_used: number;
-    ai_chats_limit: number;
-    family_members: number;
-    family_members_limit: number;
+  usage?: {
+    messages_sent?: number;
+    messages_limit?: number;
+    ai_chats_used?: number;
+    ai_chats_limit?: number;
+    family_members?: number;
+    family_members_limit?: number;
   };
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
@@ -43,7 +36,6 @@ interface SubscriptionInfo {
   family_plan?: Array<{id: string; name: string}>;
   family_count?: number;
   congregation?: string[];
-  // Activity stats
   study_groups_member?: number;
   study_groups_leader?: number;
   study_groups_admin?: number;
@@ -56,6 +48,7 @@ interface SubscriptionInfo {
 const SubscriptionPage = () => {
   const { data: session } = useSession();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -64,231 +57,128 @@ const SubscriptionPage = () => {
   }, [session]);
 
   const fetchSubscriptionInfo = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/user/subscription');
+      const response = await fetch(appApiUrl('/api/user/subscription'));
       const data = await response.json();
-  
+
       if (response.ok) {
         setSubscription(data.subscription);
+      } else {
+        toast.error(data.error || 'Failed to load subscription information');
       }
     } catch (error) {
       console.error('Error fetching subscription info:', error);
       toast.error('Failed to load subscription information');
+    } finally {
+      setIsLoading(false);
     }
   };
-  
 
   if (!session) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-xl">Please Log In to view your subscription</p>
+        <p className="text-xl text-black dark:text-white">Please log in to view your subscription</p>
       </div>
     );
   }
 
+  const usage = subscription?.usage || {};
+  const messagesSent = usage.messages_sent || 0;
+  const messagesLimit = usage.messages_limit || 0;
+  const chatsUsed = usage.ai_chats_used || 0;
+  const chatsLimit = usage.ai_chats_limit || 0;
+
   return (
     <>
       <Breadcrumb pageTitle="Subscription Details" />
-      <section className="pb-5 pt-5 md:pb-5 md:pt-5 xl:pb-5 xl:pt-5">
-        <div className="container">
-          <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-            style={{
-              transform: 'perspective(1000px) rotateX(2deg)',
-              boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            {subscription && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-2xl font-bold text-black dark:text-white">Subscription Details</h4>
-                  <Button
-                    as={Link}
-                    href="/pricing"
-                    color="primary"
-                    variant="shadow"
-                  >
-                    Upgrade Plan
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Status Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Status</h3>
-                    <Badge
-                      color={
-                        subscription.status === 'ACTIVE' ? 'success' :
-                        subscription.status === 'TRIAL' ? 'warning' :
-                        subscription.status === 'PAUSED' ? 'default' :
-                        'danger'
-                      }
-                    >
-                      {subscription.status}
-                    </Badge>
+      <section className="pb-5 pt-5">
+        <div className="container mx-auto max-w-5xl px-4">
+          <Card className="border border-gray-200 bg-gray-50 text-black dark:border-white/10 dark:bg-dark-6 dark:text-white">
+            <CardHeader className="flex flex-col items-start justify-between gap-3 px-4 pt-5 sm:flex-row sm:items-center sm:px-6 sm:pt-6">
+              <h4 className="text-xl font-bold text-black dark:text-white sm:text-2xl">Subscription Details</h4>
+              <Button as={Link} href="/pricing" className="bg-gray-900 text-white dark:bg-white/15 dark:text-white">
+                Upgrade Plan
+              </Button>
+            </CardHeader>
+            <CardBody className="px-4 pb-6 sm:px-6 sm:pb-8">
+              {isLoading && (
+                <p className="text-gray-600 dark:text-gray-400">Loading your plan details…</p>
+              )}
+              {!isLoading && !subscription && (
+                <p className="text-gray-600 dark:text-gray-400">Could not load your plan details. Try refreshing.</p>
+              )}
+              {subscription && (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                    <CardBody>
+                      <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">Status</h3>
+                      <Chip
+                        color={
+                          subscription.status === 'ACTIVE' ? 'success' :
+                          subscription.status === 'TRIAL' ? 'warning' :
+                          subscription.status === 'PAUSED' ? 'default' :
+                          'danger'
+                        }
+                      >
+                        {subscription.status}
+                      </Chip>
+                    </CardBody>
                   </Card>
 
-                  {/* Plan Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Plan</h3>
-                    <div className="text-black dark:text-white">
-                      {subscription.plan || subscription.subscription_plan || 'Starter'}
-                    </div>
+                  <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                    <CardBody>
+                      <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">Plan</h3>
+                      <p className="text-black dark:text-white">{subscription.plan || subscription.subscription_plan || 'Starter'}</p>
+                    </CardBody>
                   </Card>
 
-                  {/* Period Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Period</h3>
-                    <div className="text-black dark:text-white">
-                      {subscription.start_date && subscription.end_date ? 
-                        `${new Date(subscription.start_date).toLocaleDateString()} - ${new Date(subscription.end_date).toLocaleDateString()}` :
-                        'Not Available'}
-                    </div>
+                  <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                    <CardBody>
+                      <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">Period</h3>
+                      <p className="text-black dark:text-white">
+                        {subscription.start_date && subscription.end_date
+                          ? `${new Date(subscription.start_date).toLocaleDateString()} - ${new Date(subscription.end_date).toLocaleDateString()}`
+                          : 'Not Available'}
+                      </p>
+                    </CardBody>
                   </Card>
 
-                  {/* Trial Ends Card */}
                   {subscription.trial_ends_at && (
-                    <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                      style={{
-                        transform: 'perspective(1000px) rotateX(2deg)',
-                        boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      <h3 className="text-xl font-bold text-black dark:text-white mb-2">Trial Ends</h3>
-                      <div className="text-black dark:text-white">
-                        {new Date(subscription.trial_ends_at).toLocaleDateString()}
-                      </div>
+                    <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                      <CardBody>
+                        <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">Trial Ends</h3>
+                        <p className="text-black dark:text-white">{new Date(subscription.trial_ends_at).toLocaleDateString()}</p>
+                      </CardBody>
                     </Card>
                   )}
 
-                  {/* Family Members Card */}
-                  {subscription.family_plan && subscription.family_plan.length > 0 && (
-                    <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                      style={{
-                        transform: 'perspective(1000px) rotateX(2deg)',
-                        boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      <h3 className="text-xl font-bold text-black dark:text-white mb-2">Family Members</h3>
-                      <div className="text-black dark:text-white">
-                        {subscription.family_plan.map(member => member.name).join(', ')}
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Messages Sent Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Messages Sent</h3>
-                    <div className="text-black dark:text-white">
-                      {subscription.usage.messages_sent || 0} / {subscription.usage.messages_limit || 0}
+                  <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                    <CardBody>
+                      <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">Messages Sent</h3>
+                      <p className="text-black dark:text-white">{messagesSent} / {messagesLimit || '—'}</p>
                       <Progress
-                        value={Math.min(
-                          ((subscription.usage.messages_sent || 0) / (subscription.usage.messages_limit || 1)) * 100,
-                          100
-                        )}
+                        value={Math.min((messagesSent / (messagesLimit || 1)) * 100, 100)}
                         color="secondary"
                         className="mt-2"
                       />
-                    </div>
+                    </CardBody>
                   </Card>
 
-                  {/* AI Chats Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">AI Chats Used</h3>
-                    <div className="text-black dark:text-white">
-                      {subscription.usage.ai_chats_used || 0} / {subscription.usage.ai_chats_limit || 0}
+                  <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                    <CardBody>
+                      <h3 className="mb-2 text-lg font-semibold text-black dark:text-white">AI Chats Used</h3>
+                      <p className="text-black dark:text-white">{chatsUsed} / {chatsLimit || '—'}</p>
                       <Progress
-                        value={Math.min(
-                          ((subscription.usage.ai_chats_used || 0) / (subscription.usage.ai_chats_limit || 1)) * 100,
-                          100
-                        )}
+                        value={Math.min((chatsUsed / (chatsLimit || 1)) * 100, 100)}
                         color="secondary"
                         className="mt-2"
                       />
-                    </div>
-                  </Card>
-
-                  {/* Study Groups Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Study Groups</h3>
-                    <div className="text-black dark:text-white space-y-1">
-                      <div>Leader of: {subscription.study_groups_leader || 0} groups</div>
-                      <div>Admin of: {subscription.study_groups_admin || 0} groups</div>
-                      <div>Member of: {subscription.study_groups_member || 0} groups</div>
-                    </div>
-                  </Card>
-
-                  {/* Discussions Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Discussions</h3>
-                    <div className="text-black dark:text-white">
-                      Created: {subscription.discussions_created || 0}
-                    </div>
-                  </Card>
-
-                  {/* Prayers Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Prayers</h3>
-                    <div className="text-black dark:text-white">
-                      Created: {subscription.prayers_created || 0}<br/>
-                      Replied: {subscription.prayers_replied || 0}
-                    </div>
-                  </Card>
-
-                  {/* Newsletter Card */}
-                  <Card className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] relative z-10"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-2">Newsletter</h3>
-                    <div className="text-black dark:text-white">
-                      Status: {subscription.newsletter_subscribed ? 'Subscribed' : 'Not Subscribed'}
-                    </div>
+                    </CardBody>
                   </Card>
                 </div>
-              </div>
-            )}
+              )}
+            </CardBody>
           </Card>
         </div>
       </section>
@@ -296,4 +186,4 @@ const SubscriptionPage = () => {
   );
 };
 
-export default SubscriptionPage; 
+export default SubscriptionPage;

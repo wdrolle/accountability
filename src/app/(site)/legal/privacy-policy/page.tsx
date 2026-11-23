@@ -60,7 +60,7 @@ Parents or guardians: we want to help you guard your children's privacy. We enco
 The CStudios site does not publish content that is targeted to children. However, if you are concerned about your children providing CStudios any personal information without your consent, CStudios offers a Kids account. It allows parents to give parental consent for the collection, use, and sharing of children's (ages 12 and under) personal information online.
 
 ## 7. Enforcement
-If for some reason you believe CStudios has not adhered to these principles, please notify us by e-mail at info@email.2920.ai, and we will do our best to determine and correct the problem promptly. Be certain the words "Privacy Policy" are in the Subject line.
+If for some reason you believe CStudios has not adhered to these principles, please notify us by e-mail at info@email.amorolle.com, and we will do our best to determine and correct the problem promptly. Be certain the words "Privacy Policy" are in the Subject line.
 
 ## 8. Electronic Product Registration
 When you buy and install a new product, we may ask you to register your purchase electronically. When you do, we merge your registration information with any information you've already left with us (we call that information your personal profile). If you haven't previously registered with us, we create a personal profile for you from your product registration information. If you ever want to review or update that information, you can visit the Profile Center, click on Update Profile, and edit any of the Personal Information in your profile. If you haven't already created a Registration ID, we will ask you to do so. This ensures that only you can access your information.
@@ -85,7 +85,7 @@ CStudios will disclose your personal information, without notice, only if requir
 If you have any questions or concerns about this Privacy Policy, please contact us at:
 
 CStudios  
-Email: info@email.2920.ai  
+Email: info@email.amorolle.com  
 Website: https://CStudios.com
 Effective Date: December 30, 2024`;
 

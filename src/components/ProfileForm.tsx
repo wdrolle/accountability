@@ -1,11 +1,9 @@
-// src/components/ProfileForm.tsx
-
 'use client';
 
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Upload } from 'lucide-react';
-import { agents_VERSIONS } from '@/app/(site)/account/profile/page';
+import { appApiUrl } from '@/lib/journal';
 
 interface User {
   id: string;
@@ -13,7 +11,6 @@ interface User {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
-  agents_version?: string;
 }
 
 interface ProfileFormProps {
@@ -23,8 +20,9 @@ interface ProfileFormProps {
 export default function ProfileForm({ user }: ProfileFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
+    first_name: user.first_name || '',
+    last_name: user.last_name || '',
     phone: user.phone || '',
-    agents_version: user.agents_version || 'DeepSeek-Coding'
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,12 +41,12 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const uploadData = new FormData();
+      uploadData.append('profileImage', file);
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch(appApiUrl('/api/upload'), {
         method: 'POST',
-        body: formData,
+        body: uploadData,
       });
 
       const data = await response.json();
@@ -72,7 +70,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch(appApiUrl('/api/user/profile'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +81,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       if (response.ok) {
         toast.success('Profile updated successfully');
       } else {
-        toast.error('Failed to update profile');
+        const data = await response.json().catch(() => ({}));
+        toast.error(data.error || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -92,19 +91,19 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   };
 
   return (
-    <div className="backdrop-blur-sm bg-white/10 dark:bg-dark/10 rounded-lg border border-white/20 dark:border-white/10 shadow-lg p-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-black shadow-lg dark:border-white/10 dark:bg-dark-6 dark:text-white">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col items-center text-center">
-          <h2 className="text-2xl font-bold mb-4">
+          <h2 className="mb-4 text-2xl font-bold">
             {user.first_name && user.last_name
               ? `${user.first_name} ${user.last_name}`
-              : 'User Profile'}
+              : 'Journal account'}
           </h2>
-          <label 
-            htmlFor="profile-image" 
-            className="hero-button-gradient rounded-lg px-6 py-3 text-white inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity mt-4"
+          <label
+            htmlFor="profile-image"
+            className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-white hover:opacity-80 dark:bg-white/15"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="h-4 w-4" />
             Upload New Image
             <input
               type="file"
@@ -119,34 +118,37 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Phone</label>
+            <label className="mb-2 block text-sm font-medium">First name</label>
+            <input
+              type="text"
+              value={formData.first_name}
+              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              className="w-full rounded-lg border border-gray-200 bg-white/70 p-4 text-black focus:outline-none dark:border-white/10 dark:bg-dark-7/70 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Last name</label>
+            <input
+              type="text"
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              className="w-full rounded-lg border border-gray-200 bg-white/70 p-4 text-black focus:outline-none dark:border-white/10 dark:bg-dark-7/70 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Phone</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full rounded-lg bg-white/5 dark:bg-dark/5 border border-white/10 dark:border-white/10 p-4 focus:border-primary/20 focus:outline-none focus:ring-1 focus:ring-primary/20"
-              placeholder="+1234567890"
+              className="w-full rounded-lg border border-gray-200 bg-white/70 p-4 text-black focus:outline-none dark:border-white/10 dark:bg-dark-7/70 dark:text-white"
+              placeholder="3475550100"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">agents Version</label>
-            <select
-              value={formData.agents_version}
-              onChange={(e) => setFormData({ ...formData, agents_version: e.target.value })}
-              className="w-full rounded-lg bg-white/5 dark:bg-dark/5 border border-white/10 dark:border-white/10 p-4 focus:border-primary/20 focus:outline-none focus:ring-1 focus:ring-primary/20"
-            >
-              {agents_VERSIONS.map((version) => (
-                <option key={version.id} value={version.id}>
-                  {version.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           <button
             type="submit"
-            className="hero-button-gradient px-8 py-4 rounded-lg text-white font-medium hover:opacity-80 transition duration-300"
+            className="rounded-lg bg-gray-900 px-8 py-4 font-medium text-white transition duration-300 hover:opacity-80 dark:bg-white/15"
           >
             Save Changes
           </button>
@@ -154,4 +156,4 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       </div>
     </div>
   );
-} 
+}

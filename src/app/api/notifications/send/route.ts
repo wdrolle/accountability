@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const emailPromises = recipients.map(async (recipient: string) => {
       try {
         await resend.emails.send({
-          from: 'CStudios <info.email@2920.ai>',
+          from: 'CStudios <info.email@amorolle.com>',
           to: recipient,
           subject: `${sender_name} shared a agents verse note with you`,
           html: `

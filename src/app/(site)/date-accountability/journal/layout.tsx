@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Prayer Journal | CStudios',
-  description: 'Keep track of your prayers and spiritual journey over time.',
+  title: 'Journal | Amorolle',
+  description: 'Private journal entries with optional AI insights, tags, and mood tracking.',
 };
 
 export default function PrayerJournalLayout({

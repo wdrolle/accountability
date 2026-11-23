@@ -27,7 +27,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
     if (process.env.RESEND_API_KEY) {
       try {
         const result = await resend.emails.send({
-          from: 'CStudios <info@email.2920.ai>',
+          from: 'CStudios <info@email.amorolle.com>',
           to,
           subject,
           html,
@@ -43,7 +43,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
     // Fallback to nodemailer
     try {
       const result = await transporter.sendMail({
-        from: 'CStudios <info@email.2920.ai>',
+        from: 'CStudios <info@email.amorolle.com>',
         to,
         subject,
         html,
@@ -110,8 +110,8 @@ export function getVerificationEmailHtml(name: string, token: string) {
           </h2>
           <p style="color: #6b7280; margin: 0;">
             Contact our support team at
-            <a href="mailto:support@2920.ai" style="color: #4F46E5; text-decoration: none;">
-              support@2920.ai
+            <a href="mailto:support@amorolle.com" style="color: #4F46E5; text-decoration: none;">
+              support@amorolle.com
             </a>
           </p>
         </div>
@@ -167,7 +167,7 @@ export async function sendFamilyInvitationEmail(
   
   try {
     const result = await resend.emails.send({
-      from: 'info@email.2920.ai',
+      from: 'info@email.amorolle.com',
       to,
       subject: 'Family Subscription Invitation',
       html,
@@ -195,7 +195,7 @@ export async function assistantGeneratedResponse({
     console.log('Sending assistant response email to:', to);
     
     const data = {
-      from: 'CStudios <info@email.2920.ai>',
+      from: 'CStudios <info@email.amorolle.com>',
       to,
       subject: `Your AI Assistant Response: ${topic}`,
       text: `Hi ${firstName},\n\nHere is your AI assistant's response regarding ${topic}:\n\n${response}\n\nBest regards,\nCStudios AI Assistant`,

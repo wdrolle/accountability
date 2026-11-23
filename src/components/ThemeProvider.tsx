@@ -30,10 +30,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <div 
-        className={`${theme} min-h-screen ${
-          theme === 'light' 
-            ? 'bg-light-purple-gradient [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_p]:text-black [&_span]:text-black [&_button]:text-black [&_a]:text-black [&_div]:text-black [&_label]:text-black hover:[&_a]:text-purple hover:[&_button]:text-purple' 
-            : 'bg-dark-gradient text-white'
+        className={`${theme} min-h-screen overflow-x-hidden ${
+          theme === 'light'
+            ? 'bg-white text-black'
+            : 'bg-dark text-white'
         }`}
       >
         {children}

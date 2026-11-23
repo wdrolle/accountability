@@ -3,204 +3,174 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Breadcrumb from '@/components/Breadcrumb';
-import { PenTool, Share2, MessageSquare, Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
-
-interface DateEntry {
-  id: string;
-  content: string;
-  created_at: string;
-  user_name: string;
-  responses: DateResponse[];
-}
-
-interface DateResponse {
-  id: string;
-  content: string;
-  created_at: string;
-  user_name: string;
-  user_email: string;
-}
+import Link from 'next/link';
+import { Button, Chip } from '@heroui/react';
+import {
+  energyLevel,
+  journalApiUrl,
+  type JournalRecord,
+} from '@/lib/journal';
+import { JournalCoachModal } from '@/components/JournalCoachModal';
+import { catColor, hueForEntry } from '@/lib/journalColors';
 
 export default function DateJournalPage() {
-  const { data: session } = useSession();
-  const [selectedDate, setSelectedDate] = useState<DateEntry | null>(null);
-  const [journalContent, setJournalContent] = useState('');
-  const [isShared, setIsShared] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [dateEntries, setDateEntries] = useState<DateEntry[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentResponsePage, setCurrentResponsePage] = useState(1);
-  const [currentJournalPage, setCurrentJournalPage] = useState(1);
+  const { data: session, status } = useSession();
+  const [entries, setEntries] = useState<JournalRecord[]>([]);
+  const [selected, setSelected] = useState<JournalRecord | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const entriesPerPage = 5;
-  const responsesPerPage = 3;
-  const journalEntriesPerPage = 5;
 
-  // Fetch date entries
-  useEffect(() => {
-    const fetchDateEntries = async () => {
-      try {
-        const response = await fetch('/api/dates');
-        if (response.ok) {
-          const data = await response.json();
-          setDateEntries(data);
-        } else {
-          throw new Error('Failed to fetch date entries');
-        }
-      } catch (error) {
-        console.error('Error fetching date entries:', error);
-        toast.error('Failed to load date entries');
+  const loadEntries = async () => {
+    try {
+      const response = await fetch(journalApiUrl('?kind=journal_entry'));
+      if (!response.ok) {
+        throw new Error('Failed to fetch journal entries');
       }
-    };
+      const data = await response.json();
+      setEntries(data.items || []);
+    } catch (error) {
+      console.error('Error fetching journal entries:', error);
+      toast.error('Failed to load journal entries');
+    }
+  };
 
+  useEffect(() => {
     if (session) {
-      fetchDateEntries();
+      loadEntries();
     }
   }, [session]);
 
-  // Filter responses based on search term
-  const filteredResponses = selectedDate?.responses.filter(response => {
-    const searchLower = searchTerm.toLowerCase();
+  const filtered = entries.filter((entry) => {
+    const q = searchTerm.toLowerCase();
     return (
-      response.content.toLowerCase().includes(searchLower) ||
-      response.user_name.toLowerCase().includes(searchLower) ||
-      response.user_email.toLowerCase().includes(searchLower)
+      !q ||
+      entry.text.toLowerCase().includes(q) ||
+      (entry.tags || []).some((tag) => tag.toLowerCase().includes(q))
     );
-  }) || [];
+  });
 
-  // Pagination for responses
-  const indexOfLastResponse = currentResponsePage * responsesPerPage;
-  const indexOfFirstResponse = indexOfLastResponse - responsesPerPage;
-  const currentResponses = filteredResponses.slice(indexOfFirstResponse, indexOfLastResponse);
-  const totalResponsePages = Math.ceil(filteredResponses.length / responsesPerPage);
+  const openNewEntry = () => {
+    setSelected(null);
+    setComposerOpen(true);
+  };
+
+  const openEntry = (entry: JournalRecord) => {
+    setSelected(entry);
+    setComposerOpen(true);
+  };
+
+  if (status !== 'loading' && !session) {
+    return (
+      <>
+        <Breadcrumb pageTitle="Journal" />
+        <div className="w-full px-4 pb-6 pt-2 sm:px-6 lg:px-12">
+          <div className="mb-6 w-full">
+            <p className="w-full text-gray-600 dark:text-gray-400">
+              Private entries are the source of truth for insights, reminders, and lists.
+              This is not therapy and does not diagnose. In a crisis, call or text 988.
+            </p>
+          </div>
+          <Link
+            href="/api/auth/hub-signin?next=/journal/journal"
+            className="text-gray-800 hover:text-black dark:text-gray-300 dark:hover:text-white"
+          >
+            Sign in →
+          </Link>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
-      <Breadcrumb pageTitle="Date Journal" />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white dark:text-white light:text-black mb-4">
-            Date Journal
-          </h1>
-          <p className="text-gray-400 dark:text-gray-400 light:text-black/80">
-            Record your dating experiences and collect feedback from trusted friends.
+      <Breadcrumb pageTitle="Journal" />
+      <div className="w-full px-4 pb-6 pt-2 sm:px-6 lg:px-12">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <p className="w-full max-w-none text-gray-600 dark:text-gray-400">
+            Private entries are the source of truth for insights, reminders, and lists.
+            This is not therapy and does not diagnose. In a crisis, call or text 988.
           </p>
+          <Button
+            className="shrink-0 text-white shadow-lg"
+            size="lg"
+            style={{
+              background: 'linear-gradient(135deg, hsl(255deg 70% 55%), hsl(315deg 65% 55%))',
+            }}
+            onPress={openNewEntry}
+          >
+            ✦ New entry — talk it through
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Date Entries List */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-white mb-4">Your Date Entries</h2>
-            {dateEntries.map((entry) => (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-xl font-semibold text-black dark:text-white">Your entries</h2>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search entries or tags..."
+            aria-label="Search entries or tags"
+            className="w-full rounded-2xl bg-gray-100 px-4 py-2 text-sm text-black placeholder:text-gray-500 outline-none ring-0 dark:bg-dark-7 dark:text-white dark:placeholder:text-gray-400 sm:w-64"
+          />
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-300 px-6 py-10 text-center text-gray-500 dark:border-white/15 dark:text-gray-400">
+            No entries yet. Start your first one above — the AI companion will help you get going.
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((entry) => {
+            const hue = hueForEntry(entry);
+            const energy = energyLevel(entry.mood);
+            return (
               <div
                 key={entry.id}
-                className={`p-4 rounded-lg cursor-pointer transition-all ${
-                  selectedDate?.id === entry.id
-                    ? 'bg-purple-500/20 border border-purple-500/50'
-                    : 'bg-gray-800/50 hover:bg-gray-800/70'
-                }`}
-                onClick={() => setSelectedDate(entry)}
+                className="cursor-pointer rounded-2xl border border-gray-200 bg-gray-50 p-4 transition-transform hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-dark-6"
+                style={{ borderLeft: `4px solid ${catColor(hue)}` }}
+                onClick={() => openEntry(entry)}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-white font-medium">{entry.user_name}</h3>
-                    <p className="text-gray-400 text-sm">
-                      {new Date(entry.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-400 text-sm">
-                      {entry.responses.length} responses
-                    </span>
-                  </div>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {new Date(entry.created_at).toLocaleString()}
+                  </p>
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                    style={{ background: catColor(hue, 62, 46, 0.14), color: catColor(hue, 55, 32) }}
+                  >
+                    {energy ? `${energy.emoji} ${energy.label}` : 'No energy set'}
+                  </span>
                 </div>
-                <p className="text-gray-300 mt-2 line-clamp-2">{entry.content}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Selected Date Entry and Responses */}
-          {selectedDate && (
-            <div className="space-y-6">
-              <div className="bg-gray-800/50 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Date Details</h2>
-                <div className="prose dark:prose-invert max-w-none">
-                  <p className="text-gray-300 whitespace-pre-wrap">{selectedDate.content}</p>
+                <p className="mt-2 line-clamp-3 text-sm text-gray-800 dark:text-gray-300">{entry.text}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {(entry.tags || []).slice(0, 4).map((tag) => (
+                    <Chip
+                      key={tag}
+                      size="sm"
+                      variant="flat"
+                      style={{ background: catColor(hue, 55, 88), color: catColor(hue, 45, 28) }}
+                    >
+                      {tag}
+                    </Chip>
+                  ))}
+                  {entry.excludeFromAi && (
+                    <Chip size="sm" color="warning" variant="flat">private</Chip>
+                  )}
                 </div>
               </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-white mb-4">Community Responses</h2>
-                {selectedDate ? (
-                  <div>
-                    {/* Search Bar */}
-                    <div className="relative mb-4">
-                      <input
-                        type="text"
-                        placeholder="Search responses..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setCurrentResponsePage(1);
-                        }}
-                        className="w-full p-2 pl-10 rounded-lg bg-gray-900/50 border border-gray-300/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                      />
-                      <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                    </div>
-
-                    {/* Responses List */}
-                    <div className="space-y-4">
-                      {currentResponses.map((response) => (
-                        <div
-                          key={response.id}
-                          className="bg-gray-800/50 rounded-lg p-4"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="text-white font-medium">{response.user_name}</h4>
-                              <p className="text-gray-400 text-sm">
-                                {new Date(response.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-gray-300">{response.content}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Pagination */}
-                    {totalResponsePages > 1 && (
-                      <div className="flex justify-center space-x-2 mt-4">
-                        <button
-                          onClick={() => setCurrentResponsePage(currentResponsePage - 1)}
-                          disabled={currentResponsePage === 1}
-                          className="px-3 py-1 rounded bg-gray-800/50 text-white disabled:opacity-50"
-                        >
-                          Previous
-                        </button>
-                        <span className="text-gray-400">
-                          Page {currentResponsePage} of {totalResponsePages}
-                        </span>
-                        <button
-                          onClick={() => setCurrentResponsePage(currentResponsePage + 1)}
-                          disabled={currentResponsePage === totalResponsePages}
-                          className="px-3 py-1 rounded bg-gray-800/50 text-white disabled:opacity-50"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-gray-400">Select a date entry to view responses</p>
-                )}
-              </div>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
+
+      <JournalCoachModal
+        isOpen={composerOpen}
+        onOpenChange={setComposerOpen}
+        entry={selected}
+        onSaved={loadEntries}
+      />
     </>
   );
-} 
+}

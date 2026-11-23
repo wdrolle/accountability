@@ -24,10 +24,9 @@ export async function GET() {
 
     return NextResponse.json({
       preferences: {
-        theme_preferences: user.user_preferences?.theme_preferences || ['faith'],
+        theme_preferences: user.user_preferences?.theme_preferences || ['reflection'],
         blocked_themes: user.user_preferences?.blocked_themes || [],
         message_length_preference: user.user_preferences?.message_length_preference || 'MEDIUM',
-        preferred_agents_version: user.user_preferences?.preferred_agents_version || [],
       },
     });
   } catch (error) {
@@ -60,21 +59,39 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Update or create user preferences
+    const existingNotification = (user.user_preferences?.notification_preferences as object) || {};
+    const notificationPreferences =
+      preferences.notification_preferences ||
+      preferences.date_reminder_preferences ||
+      preferences.feedback_preferences
+        ? {
+            ...existingNotification,
+            ...(preferences.notification_preferences || {}),
+            ...(preferences.date_reminder_preferences
+              ? { date_reminder_preferences: preferences.date_reminder_preferences }
+              : {}),
+            ...(preferences.feedback_preferences
+              ? { feedback_preferences: preferences.feedback_preferences }
+              : {}),
+          }
+        : undefined;
+
     const updatedPreferences = await prisma.user_preferences.upsert({
       where: { user_id: user.id },
       create: {
         user_id: user.id,
-        theme_preferences: preferences.theme_preferences,
-        blocked_themes: preferences.blocked_themes,
-        message_length_preference: preferences.message_length_preference,
-        preferred_agents_version: preferences.preferred_agents_version,
+        theme_preferences: preferences.theme_preferences || user.user_preferences?.theme_preferences || ['reflection'],
+        blocked_themes: preferences.blocked_themes || [],
+        message_length_preference: preferences.message_length_preference || 'MEDIUM',
+        ...(notificationPreferences ? { notification_preferences: notificationPreferences } : {}),
       },
       update: {
-        theme_preferences: preferences.theme_preferences,
-        blocked_themes: preferences.blocked_themes,
-        message_length_preference: preferences.message_length_preference,
-        preferred_agents_version: preferences.preferred_agents_version,
+        ...(preferences.theme_preferences ? { theme_preferences: preferences.theme_preferences } : {}),
+        ...(preferences.blocked_themes ? { blocked_themes: preferences.blocked_themes } : {}),
+        ...(preferences.message_length_preference
+          ? { message_length_preference: preferences.message_length_preference }
+          : {}),
+        ...(notificationPreferences ? { notification_preferences: notificationPreferences } : {}),
       },
     });
 

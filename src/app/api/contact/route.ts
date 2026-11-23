@@ -37,9 +37,9 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    // Send email to info@email.2920.ai
+    // Send email to info@email.amorolle.com
     const emailResult = await sendEmail(
-      'info@email.2920.ai',
+      'info@email.amorolle.com',
       `New Contact Form Message: ${subject}`,
       emailContent
     );

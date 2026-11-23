@@ -6,41 +6,41 @@ type BreadcrumbProps = {
   pageTitle: string;
   items?: { label: string; href: string }[];
   className?: string;
+  align?: 'center' | 'left';
 };
 
-const Breadcrumb = ({ pageTitle, items = [], className = '' }: BreadcrumbProps) => {
+const Breadcrumb = ({ pageTitle, items = [], className = '', align = 'center' }: BreadcrumbProps) => {
   const allItems = [
     { label: 'Home', href: '/' },
     ...items
   ];
+  const isLeft = align === 'left';
 
   return (
-    <section className={`relative z-10 pb-5 pt-20 lg:pt-30 xl:pt-30 sm:pt-20 ${className}`}>
-      <div className="absolute left-0 top-25 -z-10 flex w-full flex-col gap-3 opacity-50">
-        <div className="h-[1.24px] w-full bg-gradient-to-r from-light-4 to-light-7 dark:footer-bg-gradient"></div>
-        <div className="h-[2.47px] w-full bg-gradient-to-r from-light-4 to-light-7 dark:footer-bg-gradient"></div>
-        <div className="h-[3.71px] w-full bg-gradient-to-r from-light-4 to-light-7 dark:footer-bg-gradient"></div>
-        <div className="h-[4.00px] w-full bg-gradient-to-r from-light-4 to-light-9 dark:footer-bg-gradient"></div>
-        <div className="h-[6.19px] w-full bg-gradient-to-r from-light-4 to-light-9 dark:footer-bg-gradient"></div>
-        <div className="h-[7.42px] w-full bg-gradient-to-r from-light-4 to-light-9 dark:footer-bg-gradient"></div>
-      </div>
-      <div className="absolute bottom-0 left-0 -z-10 h-60 w-full bg-gradient-to-b from-light/0 to-light-2 dark:from-dark/0 dark:to-dark"></div>
-
-      <div className="relative z-10 px-2">
-        <div className="mx-auto max-w-[1170px] flex flex-col items-center">
-          <h1 className="text-heading-2 font-extrabold text-black dark:text-white mb-4">
+    <section className={`relative z-10 bg-transparent px-4 pb-3 pt-18 sm:pt-20 lg:pt-22 ${className}`}>
+      <div className="relative z-10">
+        <div
+          className={`mx-auto flex max-w-[1170px] flex-col ${
+            isLeft ? 'max-w-5xl items-start text-left' : 'items-center text-center'
+          }`}
+        >
+          <h1
+            className={`mb-2 break-words font-extrabold text-black dark:text-white ${
+              isLeft ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-heading-2'
+            }`}
+          >
             {pageTitle}
           </h1>
-          <div className="flex items-center justify-center gap-2 text-sm">
-            {allItems.map((item, index) => (
+          <div className={`flex flex-wrap items-center gap-2 text-sm ${isLeft ? 'justify-start' : 'justify-center'}`}>
+            {allItems.map((item) => (
               <div key={item.href} className="flex items-center gap-2">
-                <Link 
+                <Link
                   href={item.href}
-                  className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white transition-colors"
+                  className="text-black transition-colors hover:text-black dark:text-white/80 dark:hover:text-white"
                 >
                   {item.label}
                 </Link>
-                <span className="text-black/60 dark:text-white/60">/</span>
+                <span className="text-black dark:text-white/80">/</span>
               </div>
             ))}
             <span className="text-black dark:text-white">{pageTitle}</span>

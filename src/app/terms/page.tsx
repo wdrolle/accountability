@@ -62,8 +62,8 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-100">8. Contact</h2>
             <p>For questions about these Terms, please contact us at:</p>
             <p className="mt-2">
-              <a href="mailto:support@2920.ai" className="text-purple-600 hover:text-purple-500 dark:text-purple-400">
-                support@2920.ai
+              <a href="mailto:support@amorolle.com" className="text-purple-600 hover:text-purple-500 dark:text-purple-400">
+                support@amorolle.com
               </a>
             </p>
           </section>

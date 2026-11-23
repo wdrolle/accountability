@@ -31,7 +31,7 @@ export default function ScrollToTop() {
     <div
       className={`${
         isVisible ? "flex" : "hidden"
-      } shadow-solid-5 fixed bottom-8 right-8 z-999 h-10 w-10 items-center justify-center rounded-[4px] bg-purple hover:opacity-70`}
+      } shadow-solid-5 fixed bottom-8 right-8 z-999 h-10 w-10 items-center justify-center rounded-[4px] bg-black hover:opacity-70`}
     >
       <div
         onClick={scrollToTop}

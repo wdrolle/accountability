@@ -8,26 +8,24 @@ const CallToAction = () => {
           <div className="-mx-4 flex flex-wrap items-center">
             <div className="w-full px-4 lg:w-1/2">
               <div className="mx-auto max-w-[670px] lg:mx-0">
-                <h2 className="mb-3.5 text-3xl font-bold light:text-white dark:text-white md:text-[28px] md:leading-tight lg:text-[30px] xl:text-[32px]">
-                  Experience Next-Gen AI Conversations
+                <h2 className="mb-3.5 text-2xl font-bold text-white md:text-[28px] md:leading-tight lg:text-[30px] xl:text-[32px]">
+                  Write it down. Let the AI help you follow through.
                 </h2>
                 <p className="mb-2 text-base text-white opacity-90 md:text-lg lg:mb-8">
-                  Unlock the power of advanced AI with our cutting-edge platform. 
-                  Combining GPT-4 and Llama 3 for smarter, more intuitive interactions. 
-                  Start your free trial today and discover how AI can transform your workflow.
+                  A private journal that notices patterns, sends gentle check-ins, and turns intentions into reminders, lists, and next steps — only with your consent. Not a therapy replacement.
                 </p>
                 <div className="flex flex-wrap items-center">
                   <Link
-                    href="/auth/signup"
+                    href="/api/auth/hub-signin?next=/journal/journal"
                     className="mr-5 mb-3 inline-flex items-center justify-center rounded-md bg-white px-7 py-3 text-base font-medium light:text-black dark:text-black transition duration-300 ease-in-out hover:bg-opacity-90 hover:shadow-lg"
                   >
-                    Start Free Trial
+                    Open your journal
                   </Link>
                   <Link
-                    href="/ai/demo"
+                    href="/about"
                     className="mb-3 inline-flex items-center justify-center rounded-md border border-white px-7 py-3 text-base font-medium light:text-black dark:text-white transition duration-300 ease-in-out hover:bg-white hover:text-primary"
                   >
-                    Try Demo
+                    How it works
                   </Link>
                 </div>
               </div>
@@ -38,13 +36,13 @@ const CallToAction = () => {
                   <div className="w-full px-3">
                     <div className="mx-auto max-w-[450px] text-center light:text-white dark:text-white lg:text-right">
                       <div className="mb-4 text-2xl font-semibold">
-                        Platform Features
+                        What you get
                       </div>
-                      <p className="mb-2 text-base opacity-90">• Multi-model AI Integration</p>
-                      <p className="mb-2 text-base opacity-90">• Real-time Processing</p>
-                      <p className="mb-2 text-base opacity-90">• Advanced Context Understanding</p>
-                      <p className="mb-2 text-base opacity-90">• Custom AI Solutions</p>
-                      <p className="text-base opacity-90">• Enterprise-grade Security</p>
+                      <p className="mb-2 text-base opacity-90">• Private journal entries</p>
+                      <p className="mb-2 text-base opacity-90">• Mood and theme insights</p>
+                      <p className="mb-2 text-base opacity-90">• Reminders and check-ins</p>
+                      <p className="mb-2 text-base opacity-90">• Lists, bills, and budgets</p>
+                      <p className="text-base opacity-90">• Entry-level privacy controls</p>
                     </div>
                   </div>
                 </div>

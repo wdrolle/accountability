@@ -40,26 +40,30 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma
 }
 
-// Enhanced connection handling with better error messages
-prisma.$connect().then(() => {
-  console.log('✅ Database connected successfully')
-}).catch((error) => {
-  console.error('❌ Failed to connect to database:', error.message)
-  
-  if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-    console.error('\n💡 Connection troubleshooting:')
-    console.error('1. Check your DATABASE_URL in .env.local')
-    console.error('2. Verify your Supabase project is running')
-    console.error('3. Check your internet connection')
-    console.error('4. Ensure your IP is whitelisted in Supabase (if applicable)')
-  }
-  
-  if (error.message.includes('password authentication failed')) {
-    console.error('\n💡 Authentication troubleshooting:')
-    console.error('1. Check your database password in .env.local')
-    console.error('2. Verify the database user has proper permissions')
-    console.error('3. Try resetting your database password in Supabase dashboard')
-  }
-})
+// Eager connect is Node-only. Middleware runs on the Edge runtime, where
+// Prisma Client cannot $connect() without Accelerate / driver adapters.
+const isEdgeRuntime = process.env.NEXT_RUNTIME === "edge";
+if (!isEdgeRuntime) {
+  prisma.$connect().then(() => {
+    console.log('✅ Database connected successfully')
+  }).catch((error) => {
+    console.error('❌ Failed to connect to database:', error.message)
+    
+    if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      console.error('\n💡 Connection troubleshooting:')
+      console.error('1. Check your DATABASE_URL in .env.local')
+      console.error('2. Verify your Supabase project is running')
+      console.error('3. Check your internet connection')
+      console.error('4. Ensure your IP is whitelisted in Supabase (if applicable)')
+    }
+    
+    if (error.message.includes('password authentication failed')) {
+      console.error('\n💡 Authentication troubleshooting:')
+      console.error('1. Check your database password in .env.local')
+      console.error('2. Verify the database user has proper permissions')
+      console.error('3. Try resetting your database password in Supabase dashboard')
+    }
+  })
+}
 
 export default prisma 

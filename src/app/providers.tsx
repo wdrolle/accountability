@@ -5,6 +5,8 @@ import { SessionProvider } from 'next-auth/react';
 import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
+const authBasePath = `${process.env.NEXT_PUBLIC_BASE_PATH || "/accountability"}/api/auth`;
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = React.useState(false);
 
@@ -18,7 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SessionProvider>
+    <SessionProvider basePath={authBasePath}>
       <HeroUIProvider>
         <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
           {children}

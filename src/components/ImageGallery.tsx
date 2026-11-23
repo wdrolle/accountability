@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DEFAULT_USER_IMAGE } from '@/lib/constants';
+import { appApiUrl } from '@/lib/journal';
 
 interface ImageGalleryProps {
   images: {
@@ -51,13 +52,13 @@ export default function ImageGallery({ images, onUpdateProfile, currentProfileIm
       const relativePath = imageUrl.split('/user_images/')[1];
       
       // Update the user's profile in the database
-      const updateResponse = await fetch('/api/user/profile', {
+      const updateResponse = await fetch(appApiUrl('/api/user/profile'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          image: relativePath
+        body: JSON.stringify({
+          image: relativePath || imageUrl
         }),
       });
 

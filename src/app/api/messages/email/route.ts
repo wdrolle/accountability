@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     // Format email content with HTML
     const emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Message from Zoe</h2>
+        <h2 style="color: #333;">Message from your AI Assistant</h2>
         <p>Dear ${user.first_name || 'Friend'},</p>
         <div style="margin: 20px 0; padding: 20px; background-color: #f9f9f9; border-radius: 5px;">
           ${content}
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     // Send email
     await sendEmail(
       user.email,
-      subject || 'Message from Zoe',
+      subject || 'Message from your AI Assistant',
       emailContent
     );
 

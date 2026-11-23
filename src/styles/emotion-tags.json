@@ -1,0 +1,71 @@
+{
+  "$schema": "emotion tag taxonomy — 8 primary families (Plutchik-inspired), each with a 3-step mild/core/intense wheel triad plus an extended list of everyday journaling words. `hue` is the HSL hue degree used for that family's color across the wheel and chips.",
+  "families": [
+    {
+      "id": "joy",
+      "name": "Joy",
+      "hue": 48,
+      "wheel": { "mild": "Serenity", "core": "Joy", "intense": "Ecstasy" },
+      "tags": ["Happy", "Cheerful", "Content", "Grateful", "Hopeful", "Proud", "Playful", "Relieved", "Excited", "Amused", "Optimistic", "Blessed", "Lighthearted", "Delighted"]
+    },
+    {
+      "id": "trust",
+      "name": "Trust",
+      "hue": 150,
+      "wheel": { "mild": "Acceptance", "core": "Trust", "intense": "Admiration" },
+      "tags": ["Safe", "Secure", "Respected", "Appreciated", "Connected", "Supported", "Loyal", "Comfortable", "Open", "Confident", "Reassured"]
+    },
+    {
+      "id": "fear",
+      "name": "Fear",
+      "hue": 174,
+      "wheel": { "mild": "Apprehension", "core": "Fear", "intense": "Terror" },
+      "tags": ["Anxious", "Nervous", "Worried", "Insecure", "Overwhelmed", "Panicked", "Uneasy", "Vulnerable", "Scared", "Dread", "Timid"]
+    },
+    {
+      "id": "surprise",
+      "name": "Surprise",
+      "hue": 196,
+      "wheel": { "mild": "Distraction", "core": "Surprise", "intense": "Amazement" },
+      "tags": ["Shocked", "Startled", "Confused", "Stunned", "Curious", "Amazed", "Bewildered", "Speechless"]
+    },
+    {
+      "id": "sadness",
+      "name": "Sadness",
+      "hue": 221,
+      "wheel": { "mild": "Pensiveness", "core": "Sadness", "intense": "Grief" },
+      "tags": ["Lonely", "Heartbroken", "Disappointed", "Discouraged", "Hopeless", "Empty", "Hurt", "Homesick", "Regretful", "Numb", "Nostalgic", "Melancholy"]
+    },
+    {
+      "id": "disgust",
+      "name": "Disgust",
+      "hue": 277,
+      "wheel": { "mild": "Boredom", "core": "Disgust", "intense": "Loathing" },
+      "tags": ["Disgusted", "Ashamed", "Embarrassed", "Guilty", "Disapproving", "Judged", "Repulsed", "Uncomfortable"]
+    },
+    {
+      "id": "anger",
+      "name": "Anger",
+      "hue": 353,
+      "wheel": { "mild": "Annoyance", "core": "Anger", "intense": "Rage" },
+      "tags": ["Frustrated", "Irritated", "Resentful", "Jealous", "Betrayed", "Hostile", "Bitter", "Defensive", "Agitated", "Fuming"]
+    },
+    {
+      "id": "anticipation",
+      "name": "Anticipation",
+      "hue": 30,
+      "wheel": { "mild": "Interest", "core": "Anticipation", "intense": "Vigilance" },
+      "tags": ["Motivated", "Determined", "Focused", "Eager", "Restless", "Ambitious", "Driven", "Impatient", "Expectant"]
+    }
+  ],
+  "ringLevels": [
+    { "key": "mild",    "order": 1, "saturation": 52, "lightness": 80 },
+    { "key": "core",    "order": 2, "saturation": 64, "lightness": 63 },
+    { "key": "intense", "order": 3, "saturation": 74, "lightness": 45 }
+  ],
+  "notes": [
+    "Color formula: fill = hsl(family.hue, ringLevel.saturation%, ringLevel.lightness%). Same formula drives both the wheel wedges and the flat chip lists, so a tag always reads as the same color wherever it appears.",
+    "Each family contributes 3 wheel words + its `tags` array to the full selectable set (107 tags total across all 8 families).",
+    "A journal entry's stored mood value should be an array of tag strings (e.g. [\"Joy\", \"Restless\", \"Grateful\"]) plus, optionally, the family id(s) touched, to make later trend queries ('how often did Sadness-family tags appear this month') cheap without re-deriving family from tag text."
+  ]
+}

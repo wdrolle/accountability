@@ -1,1102 +1,383 @@
-// src/app/(site)/ai/zoe/page.tsx
-
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { Mic, MicOff, Volume2, VolumeX, ChevronDown, Send, Mail, MessageSquare, Settings } from "lucide-react";
+import { Mic, MicOff, Send, Volume2, VolumeX, Settings, X } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { Countdown } from '@/components/Countdown';
-import {
+  Button,
+  Card,
+  CardBody,
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalBody,
+  ModalContent,
   ModalFooter,
-  useDisclosure, 
+  ModalHeader,
+  Select,
+  SelectItem,
   Slider,
-  Tooltip,
-  Spinner
+  Spinner,
 } from "@heroui/react";
-import VoiceSelectorPolly from '@/components/VoiceSelector/Polly';
+import { cn } from "@/lib/utils";
+import { appApiUrl } from "@/lib/journal";
 
-type SpeechRecognitionEvent = {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-        confidence: number;
-      };
-    };
-    length: number;
-  };
-};
-
-type SpeechRecognitionErrorEvent = {
-  error: string;
-  message: string;
-};
-
-interface SpeechRecognition {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-}
-
-type SpeechRecognitionConstructor = {
-  new (): SpeechRecognition;
-};
-
-declare global {
-  var SpeechRecognition: SpeechRecognitionConstructor | undefined;
-  var webkitSpeechRecognition: SpeechRecognitionConstructor | undefined;
-}
-
-interface Voice {
+type ThreadMessage = {
   id: string;
-  gender: string;
-  neural: boolean;
-}
+  role: "user" | "assistant";
+  text: string;
+};
 
-interface VoiceGroup {
-  language: string;
-  voices: Voice[];
-}
+const DISCLAIMER = "AI can make mistakes. Check important info. This is not therapy — in a crisis, call or text 988.";
 
-interface VoiceData {
-  [language: string]: VoiceGroup;
+const VOICES = [
+  { id: "Joanna", label: "Joanna — English (US), Female" },
+  { id: "Matthew", label: "Matthew — English (US), Male" },
+  { id: "Amy", label: "Amy — English (UK), Female" },
+  { id: "Emma", label: "Emma — English (UK), Female" },
+  { id: "Stephen", label: "Stephen — English (US), Male" },
+];
+
+function clampSpeechRate(value: number) {
+  return Math.min(2, Math.max(0.4, Math.round(value * 10) / 10));
 }
 
 export default function AssistantPage() {
+  const { data: session, status } = useSession();
   const [prompt, setPrompt] = useState("");
-  const [contextFiles, setContextFiles] = useState<string[]>([]);
-  const [scratchPad, setScratchPad] = useState("");
-  const [response, setResponse] = useState("");
+  const [thread, setThread] = useState<ThreadMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const submittingRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [isSendingText, setIsSendingText] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const { data: session } = useSession();
-  const [showCountdown, setShowCountdown] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState("Joanna");
+  const [speechRate, setSpeechRate] = useState(1.0);
   const [isRecognitionSupported, setIsRecognitionSupported] = useState(false);
-  
+  const [showSettings, setShowSettings] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const isProcessingRef = useRef(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const startingRef = useRef(false);
-
-  const speechStateRef = useRef<{
-    isStarting: boolean;
-    currentUtterance: SpeechSynthesisUtterance | null;
-  }>({
-    isStarting: false,
-    currentUtterance: null
-  });
-
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const submitRef = useRef<(voicePrompt?: string, event?: FormEvent) => Promise<void>>(async () => {});
 
-  // Add state for voice selection
-  const [selectedVoice, setSelectedVoice] = useState('Joanna');
-  const [availableVoices, setAvailableVoices] = useState<VoiceData>({});
-
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
-  const [speechRate, setSpeechRate] = useState(1.0); // 100% default speed
-
-  // Add useEffect to fetch available voices
   useEffect(() => {
-    const fetchVoices = async () => {
-      try {
-        const response = await fetch('/api/tts');
-        if (response.ok) {
-          const data = await response.json();
-          setAvailableVoices(data.voices);
-        }
-      } catch (error) {
-        console.error('Failed to fetch voices:', error);
+    const SpeechRecognitionAPI = (globalThis as any).SpeechRecognition || (globalThis as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+    setIsRecognitionSupported(true);
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event: any) => {
+      const spoken = event.results?.[0]?.[0]?.transcript || "";
+      if (spoken) {
+        setPrompt(spoken);
+        submitRef.current(spoken);
       }
     };
-
-    fetchVoices();
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
   }, []);
 
-  const initializeSpeechRecognition = () => {
-    if (typeof window === 'undefined') {
-      setIsRecognitionSupported(false);
-      return null;
-    }
-    
-    // Check if the browser supports speech recognition
-    const SpeechRecognitionAPI = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
-    if (!SpeechRecognitionAPI) {
-      console.warn('Speech recognition is not supported in this browser');
-      setIsRecognitionSupported(false);
-      return null;
-    }
-
-    try {
-      setIsRecognitionSupported(true);
-      const recognition = new SpeechRecognitionAPI();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const currentTranscript = Array.from({ length: event.results.length }, (_, i) => 
-          event.results[i][0].transcript
-        ).join(' ');
-        
-        setTranscript(currentTranscript);
-
-        // Only process final results and complete sentences
-        const latestResult = event.results[event.results.length - 1];
-        if (latestResult[0] && !isProcessingRef.current) {
-          // Check if the transcript ends with sentence-ending punctuation
-          const endsWithPunctuation = /[.!?]$/.test(currentTranscript.trim());
-          if (endsWithPunctuation) {
-            handleVoiceCommand(currentTranscript);
-          }
-        }
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'not-allowed') {
-          console.error('Microphone access denied');
-          toast.error("Microphone access denied");
-          setIsListening(false);
-        } else if (event.error === 'no-speech') {
-          // Don't log or show error for no-speech, just restart if needed
-          if (isListening && !document.hidden && !startingRef.current) {
-            startingRef.current = true;
-            setTimeout(() => {
-              try {
-                recognition.start();
-              } catch (error) {
-                console.error('Error restarting recognition:', error);
-                setIsListening(false);
-              } finally {
-                startingRef.current = false;
-              }
-            }, 200);
-          }
-        } else if (event.error === 'aborted') {
-          // Don't show error for intentional stops
-          setIsListening(false);
-        } else {
-          // Only log and show errors for other unexpected issues
-          console.error('Speech recognition error:', event.error);
-          toast.error("Speech recognition error. Please try again.");
-          setIsListening(false);
-        }
-        startingRef.current = false;
-      };
-
-      recognition.onend = () => {
-        // Only try to restart if we're supposed to be listening and not currently starting
-        if (isListening && !document.hidden && !startingRef.current) {
-          startingRef.current = true;
-          setTimeout(() => {
-            try {
-              recognition.start();
-            } catch (error) {
-              // Only log restart errors if they're not due to already listening
-              if (!(error instanceof Error) || !error.message.includes('already started')) {
-                console.error('Error restarting recognition:', error);
-              }
-              setIsListening(false);
-            } finally {
-              startingRef.current = false;
-            }
-          }, 200);
-        } else {
-          setIsListening(false);
-        }
-      };
-
-      return recognition;
-    } catch (error) {
-      console.error('Failed to initialize speech recognition:', error);
-      setIsRecognitionSupported(false);
-      return null;
-    }
-  };
-
   useEffect(() => {
-    const processTranscript = async () => {
-      if (transcript && !isProcessingRef.current && /[.!?]$/.test(transcript.trim())) {
-        await handleVoiceCommand(transcript);
-      }
-    };
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  }, [thread, isLoading]);
 
-    processTranscript();
-  }, [transcript, session]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const initializeAudio = async () => {
-      try {
-        // Initialize audio context for voice activity detection
-        if (typeof window !== 'undefined') {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-
-        // Initialize speech recognition
-        recognitionRef.current = initializeSpeechRecognition();
-
-        // Request microphone permission early
-        if (session && mounted && recognitionRef.current) {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            if (stream) {
-              stream.getTracks().forEach(track => track.stop()); // Stop the stream after permission check
-            }
-          } catch (error) {
-            console.error('Microphone permission denied:', error);
-            toast.error("Please allow microphone access to use voice commands");
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing audio:', error);
-        setIsRecognitionSupported(false);
-      }
-    };
-
-    initializeAudio();
-
-    return () => {
-      mounted = false;
-      stopListening();
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, [session]);
-
-  const startListening = async () => {
-    if (!recognitionRef.current) {
-      toast.error("Speech recognition is not supported in your browser");
-      return;
-    }
-
-    if (speechStateRef.current.isStarting) {
-      return;
-    }
-
-    speechStateRef.current.isStarting = true;
-
-    try {
-      // Stop any existing streams
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      // Get new stream
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      // Make sure recognition is stopped
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // Ignore stop errors
-      }
-
-      // Wait for previous recognition to fully stop
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-        setTranscript("");
-      } catch (error) {
-        if (!(error instanceof Error) || !error.message.includes('already started')) {
-          console.error('Error starting recognition:', error);
-          toast.error("Failed to start voice input");
-          setIsListening(false);
-        }
-      }
-    } catch (error) {
-      console.error('Error starting voice input:', error);
-      toast.error("Failed to access microphone");
-      setIsListening(false);
-    } finally {
-      speechStateRef.current.isStarting = false;
-    }
-  };
-
-  const stopListening = () => {
-    if (!recognitionRef.current || startingRef.current) {
-      return;
-    }
-
-    try {
-      recognitionRef.current.stop();
-    } catch (e) {
-      // Ignore errors from stopping
-    }
-    
-    if (sourceNodeRef.current) {
-      sourceNodeRef.current.disconnect();
-    }
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    setIsListening(false);
-    setTranscript("");
-  };
-
-  const handleVoiceCommand = async (transcript: string) => {
-    if (!transcript.trim()) return;
-    
-    if (!session) {
-      toast.error("Please sign in to use voice commands");
-      stopListening();
-      return;
-    }
-    
-    try {
-      isProcessingRef.current = true;
-      setPrompt(transcript);
-
-      const response = await fetch("/api/ai/zoe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: transcript,
-        }),
-      });
-
-      if (response.status === 401) {
-        toast.error("Please sign in to continue");
-        stopListening();
-        return;
-      }
-
-      setShowCountdown(true);
-      
-      // Read the response as a readable stream
-      const reader = response.body?.getReader();
-      let fullResponse = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          // Convert the Uint8Array to text
-          const chunk = new TextDecoder().decode(value);
-          try {
-            const data = JSON.parse(chunk);
-            if (data.markdown) {
-              fullResponse = data.markdown;
-              setResponse(fullResponse);
-            }
-          } catch (e) {
-            console.error('Error parsing chunk:', e);
-          }
-        }
-      } else {
-        // Fallback for browsers that don't support streaming
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        fullResponse = data.markdown;
-        setResponse(data.markdown);
-      }
-
-      setShowCountdown(false);
-      
-      if (fullResponse) {
-        try {
-          if (currentAudioRef.current) {
-            currentAudioRef.current.pause();
-            currentAudioRef.current = null;
-            setIsSpeaking(false);
-          }
-          await speakResponse(fullResponse);
-        } catch (error) {
-          console.error('TTS error with the handleVoiceCommand:', error);
-        }
-      }
-
-    } catch (error) {
-      if (error instanceof Error && error.message === 'Cancelled by user') {
-        console.log('Voice command cancelled by user');
-      } else {
-        console.error('Error processing voice command:', error);
-        toast.error("Failed to process voice command. Please try again.");
-      }
-      stopListening();
-    } finally {
-      isProcessingRef.current = false;
-      setTranscript("");
-      if (!isListening && session) {
-        startListening();
-      }
-    }
-  };
+  const lastAssistant = [...thread].reverse().find((item) => item.role === "assistant")?.text || "";
 
   const speakResponse = async (text: string) => {
-    if (!text) return;
+    const clean = (text || "").replace(/<[^>]*>/g, " ").trim();
+    if (!clean) {
+      toast.error("Send a message first, then press volume to hear the reply.");
+      return;
+    }
+    if (clean.includes("I could not complete that request")) {
+      toast.error("There is no successful reply to speak yet.");
+      return;
+    }
 
     try {
-      // Stop any existing audio playback
       if (currentAudioRef.current) {
-        console.log('Stopping current audio playback');
         currentAudioRef.current.pause();
         currentAudioRef.current = null;
       }
-
-      setIsSpeaking(true);
-      console.log('Starting TTS request...');
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          text,
-          voice: selectedVoice 
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      console.log('TTS response received:', {
-        status: response.status,
-        contentType: response.headers.get('Content-Type')
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('TTS error response:', errorData);
-        if (response.status === 503) {
-          toast.error(errorData.error);
-          console.error('TTS installation required:', errorData.details);
-          return;
-        }
-        throw new Error(errorData.error || 'TTS request failed');
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
       }
+      setIsSpeaking(true);
 
-      // Check content type to determine how to handle the response
-      const contentType = response.headers.get('Content-Type');
-      console.log('Response content type:', contentType);
-
-      if (contentType?.includes('audio')) {
-        const audioBlob = await response.blob();
-        console.log('Audio blob created, size:', audioBlob.size, 'bytes');
-        const audioUrl = URL.createObjectURL(audioBlob);
+      const response = await fetch(appApiUrl("/api/tts"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean, voice: selectedVoice, rate: speechRate }),
+      });
+      if (response.ok && response.headers.get("Content-Type")?.includes("audio")) {
+        const audioUrl = URL.createObjectURL(await response.blob());
         const audio = new Audio(audioUrl);
         currentAudioRef.current = audio;
-
-        // Start loading the audio immediately
-        console.log('Loading audio...');
-        audio.load();
-
-        // Set up event handlers
-        const playAudio = () => {
-          console.log('Audio loaded, starting playback');
-          const playPromise = audio.play();
-          if (playPromise) {
-            playPromise.catch(error => {
-              console.error('Audio play error:', error);
-              setIsSpeaking(false);
-              toast.error('Failed to play audio. Please try again.');
-            });
-          }
-        };
-
-        audio.oncanplaythrough = playAudio;
         audio.onended = () => {
-          console.log('Audio playback completed');
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
           currentAudioRef.current = null;
         };
-
-        audio.onerror = (e) => {
-          console.error('Audio error:', e);
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-          currentAudioRef.current = null;
-          toast.error('Failed to play audio');
-        };
-
-        // Add volume and playback monitoring
-        audio.onvolumechange = () => {
-          console.log('Volume changed:', audio.volume);
-        };
-
-        audio.onpause = () => {
-          console.log('Audio paused');
-        };
-
-        audio.onplay = () => {
-          console.log('Audio started playing');
-        };
-
-      } else {
-        // Handle error response
-        const errorData = await response.json();
-        console.error('Unexpected response type:', errorData);
-        throw new Error(errorData.error || 'TTS request failed');
-      }
-
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error('TTS request timed out');
-          toast.error('Speech generation timed out. Please try again.');
-        } else {
-          console.error('TTS error:', error);
-          toast.error(error.message || 'Failed to generate speech');
-        }
-      } else {
-        console.error('Unknown TTS error:', error);
-        toast.error('Failed to generate speech');
-      }
-      setIsSpeaking(false);
-      if (currentAudioRef.current) {
-        currentAudioRef.current = null;
-      }
-    }
-  };
-
-  const toggleSpeaking = () => {
-    if (isSpeaking && currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current = null;
-      setIsSpeaking(false);
-    } else if (response) {
-      // If there's a response but we're not speaking, try speaking it again
-      speakResponse(response);
-    }
-  };
-
-  const handleSubmit = async (voicePrompt?: string) => {
-    try {
-      const finalPrompt = voicePrompt || prompt;
-      if (!finalPrompt.trim()) {
-        toast.error("Please enter a message");
+        await audio.play();
         return;
       }
 
-      setIsLoading(true);
-      setShowCountdown(true);
-      
-      // Update to handle streaming response
-      const response = await fetch("/api/ai/zoe", {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.rate = speechRate;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+        return;
+      }
+
+      throw new Error("TTS request failed");
+    } catch (error) {
+      console.error(error);
+      setIsSpeaking(false);
+      toast.error("Could not play speech");
+    }
+  };
+
+  const handleSubmit = async (voicePrompt?: string, event?: FormEvent) => {
+    event?.preventDefault();
+    if (submittingRef.current || isLoading) return;
+
+    const finalPrompt = (voicePrompt || prompt).trim();
+    if (!finalPrompt) {
+      toast.error("Please enter a message");
+      return;
+    }
+    if (status === "unauthenticated" || !session) {
+      toast.error("Please sign in to chat");
+      return;
+    }
+
+    submittingRef.current = true;
+    const userMessage: ThreadMessage = { id: `u-${Date.now()}`, role: "user", text: finalPrompt };
+    const assistantId = `a-${Date.now()}`;
+    setThread((current) => [...current, userMessage, { id: assistantId, role: "assistant", text: "" }]);
+    setPrompt("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(appApiUrl("/api/ai/zoe"), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: finalPrompt }),
       });
-
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error(data.error || "Failed to get response");
       }
 
-      // Read the response as a readable stream
-      const reader = response.body?.getReader();
-      let fullResponse = '';
+      const fullResponse = data.markdown || data.command || data.error || "";
+      setThread((current) =>
+        current.map((item) => (item.id === assistantId ? { ...item, text: fullResponse } : item)),
+      );
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          // Convert the Uint8Array to text
-          const chunk = new TextDecoder().decode(value);
-          try {
-            const data = JSON.parse(chunk);
-            if (data.markdown) {
-              fullResponse = data.markdown;
-              setResponse(fullResponse);
-            }
-          } catch (e) {
-            console.error('Error parsing chunk:', e);
-          }
-        }
-      } else {
-        // Fallback for browsers that don't support streaming
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        fullResponse = data.markdown;
-        setResponse(data.markdown);
-      }
-
-      setShowCountdown(false);
-      
       if (isSpeaking && fullResponse) {
-        await speakResponse(fullResponse);
+        await speakResponse(fullResponse.replace(/<[^>]*>/g, ""));
       }
-
-      setPrompt("");
-      setTranscript("");
-      
     } catch (error) {
-      console.error('Error:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to process request");
+      console.error(error);
+      toast.error("Failed to process request");
+      setThread((current) =>
+        current.map((item) =>
+          item.id === assistantId ? { ...item, text: "I could not complete that request. Please try again." } : item,
+        ),
+      );
     } finally {
+      submittingRef.current = false;
       setIsLoading(false);
-      setShowCountdown(false);
     }
   };
+  submitRef.current = handleSubmit;
 
-  const handleMicToggle = async () => {
-    if (!session) {
-      toast.error("Please sign in to use voice commands");
+  const toggleMic = () => {
+    if (!session || !recognitionRef.current) {
+      toast.error("Voice input is not available");
       return;
     }
-
-    if (!recognitionRef.current) {
-      toast.error("Speech recognition is not supported in your browser");
-      return;
-    }
-
     if (isListening) {
-      stopListening();
-      // Also stop speaking when mic is turned off
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      }
-    } else {
-      await startListening();
-    }
-  };
-
-  const [emailSent, setEmailSent] = useState(false);
-  const [textSent, setTextSent] = useState(false);
-
-  const handleSendEmail = async () => {
-    if (!response) {
-      toast.error("No message to send. Please generate a response first.");
+      recognitionRef.current.stop();
+      setIsListening(false);
       return;
     }
-
-    try {
-      setIsSendingEmail(true);
-      setEmailSent(false);
-      const res = await fetch("/api/messages/email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: response,
-          subject: "Message from Zoe",
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to send email");
-      }
-
-      setEmailSent(true);
-      toast.success("Email sent! Check your inbox for the message.");
-      // Clear email sent status after 3 seconds
-      setTimeout(() => setEmailSent(false), 3000);
-    } catch (error) {
-      console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again later.");
-    } finally {
-      setIsSendingEmail(false);
-    }
-  };
-
-  const handleSendText = async () => {
-    if (!response) {
-      toast.error("No message to send. Please generate a response first.");
-      return;
-    }
-
-    try {
-      setIsSendingText(true);
-      setTextSent(false);
-      const res = await fetch("/api/messages/text", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: response,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to send text");
-      }
-
-      setTextSent(true);
-      toast.success(data.message || "Text message sent! Check your phone for the message.");
-      // Clear text sent status after 3 seconds
-      setTimeout(() => setTextSent(false), 3000);
-    } catch (error) {
-      console.error("Error sending text:", error);
-      const message = error instanceof Error ? error.message : "Failed to send text";
-      toast.error(message + ". Please try again later.");
-    } finally {
-      setIsSendingText(false);
-    }
-  };
-
-  // Add state for countdown handlers
-  const [countdownHandlers, setCountdownHandlers] = useState({
-    onComplete: () => {},
-    onCancel: () => {}
-  });
-
-  // Update prepareSSML to use the speech rate
-  const prepareSSML = (text: string): string => {
-    text = text.replace(/<[^>]*>/g, '');
-    text = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-    
-    return `<speak><prosody rate="${speechRate * 100}%">${text}</prosody></speak>`;
+    setIsListening(true);
+    recognitionRef.current.start();
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Breadcrumb
-        pageTitle="AI Assistant"
-        items={[
-          { label: "AI", href: "/ai" },
-          { label: "Assistant", href: "/ai/assistant" }
-        ]}
-      />
-
-      <div className="w-full px-4 sm:px-8 py-8">
-        <div className="grid gap-8 md:grid-cols-[40%_60%] px-10">
-          <Card className="p-6 bg-card text-card-foreground shadow-lg border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-primary">AI Assistant</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Ask any question or request assistance. The AI will respond with helpful, accurate information.
-            </p>
-
-            {transcript && (
-              <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
-                <p className="text-sm font-medium text-primary">Listening:</p>
-                <p className="text-sm text-muted-foreground">{transcript}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
+      <Breadcrumb pageTitle="AI Assistant" />
+      <div className="container mx-auto px-4 py-8">
+        <Card className="mx-auto flex min-h-[60vh] max-w-3xl flex-col border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-dark-6 sm:min-h-[70vh]">
+          <CardBody className="flex flex-1 flex-col gap-4 p-0">
+            <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
-                <h3 className="text-lg font-medium mb-2 text-primary">Context Files</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Add file paths or content that provides additional context for the AI's responses. 
-                  This helps the assistant understand specific documents or references you want to discuss.
-                </p>
-                <Textarea
-                  placeholder="Add context files here..."
-                  value={contextFiles.join("\n")}
-                  onChange={(e) => setContextFiles(e.target.value.split("\n"))}
-                  className="min-h-[100px] dark:bg-background light:text-dark dark:text-foreground placeholder:text-black/60 dark:placeholder:text-white/60"
-                />
+                <h2 className="text-lg font-semibold text-black dark:text-white">Journal assistant</h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Ask for a recap, a plan, or help with a next step. Uses your local AI through the hub connection.</p>
               </div>
-
-              <div>
-                <h3 className="text-lg font-medium mb-2 text-primary">Scratch Pad</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Use this area for temporary notes or additional information you want to reference 
-                  during your conversation. This content persists across interactions.
-                </p>
-                <Textarea
-                  placeholder="Add notes or temporary content here..."
-                  value={scratchPad}
-                  onChange={(e) => setScratchPad(e.target.value)}
-                  className="min-h-[100px] dark:bg-background light:text-dark dark:text-foreground placeholder:text-black/60 dark:placeholder:text-white/60"
-                />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-medium mb-2 text-primary">Text Input</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Type your questions or requests here, or use voice commands. 
-                  Your voice input will appear here automatically.
-                </p>
-                <Textarea
-                  placeholder="Ask a question or request assistance..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[100px] dark:bg-background light:text-dark dark:text-foreground placeholder:text-black/60 dark:placeholder:text-white/60"
-                />
-              </div>
-
-              <Button 
-                onClick={() => handleSubmit()}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={!session || isLoading}
-              >
-                {!session ? "Please sign in to continue" : isLoading ? "Processing..." : "Send Request"}
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-card text-card-foreground shadow-lg border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-primary">Response</h2>
-              {(isLoading || isSpeaking || isSendingEmail || isSendingText || emailSent || textSent) && (
-                <div className="animate-pulse-blue bg-blue-900/50 dark:bg-blue-900/50 text-blue-100 dark:text-blue-100 px-4 py-1.5 rounded-md text-sm font-medium border border-blue-800 dark:border-blue-800">
-                  {isLoading ? "AI is thinking..." : 
-                  isSpeaking ? "Speaking..." :
-                  isSendingEmail ? "Sending email..." :
-                  isSendingText ? "Sending text..." :
-                  emailSent ? "Email sent successfully!" :
-                  textSent ? "Text sent successfully!" : null}
-                </div>
-              )}
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={toggleSpeaking}
-                  className={cn(
-                    "border-primary hover:bg-primary/10",
-                    isSpeaking && "bg-primary/20"
-                  )}
-                  title={isSpeaking ? "Stop Speaking" : "Speak Response"}
-                >
+                <Button isIconOnly variant="flat" aria-label="Speak last reply" onPress={() => speakResponse(lastAssistant)}>
                   {isSpeaking ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleMicToggle}
-                  disabled={!isRecognitionSupported || !session}
-                  className={cn(
-                    "border-primary hover:bg-primary/10",
-                    isListening && "bg-primary/20",
-                    (!isRecognitionSupported || !session) && "opacity-50 cursor-not-allowed"
-                  )}
-                  title={
-                    !session 
-                      ? "Please sign in to use voice commands" 
-                      : !isRecognitionSupported 
-                        ? "Speech recognition is not supported in your browser" 
-                        : isListening 
-                          ? "Stop Listening" 
-                          : "Start Listening"
-                  }
-                >
+                <Button isIconOnly variant="flat" aria-label="Voice input" isDisabled={!isRecognitionSupported || !session} onPress={toggleMic}>
                   {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onOpen}
-                  className="border-primary hover:bg-primary/10"
-                  title="Settings"
-                >
+                <Button isIconOnly variant="flat" aria-label="Voice settings" onPress={() => setShowSettings(true)}>
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="mb-4 dark:bg-dark bg-white light:text-dark dark:text-foreground">
-              <VoiceSelectorPolly onVoiceChange={(voice) => {
-                setSelectedVoice(voice.id);
-                if (response && isSpeaking) {
-                  speakResponse(response);
-                }
-              }} />
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-4">
-              <span className="text-black dark:text-white">
-                The AI's responses will appear here. You can use the volume button to hear the response 
-                spoken aloud, or click it again to replay the last response. The response will include 
-                explanations as appropriate.
-              </span>
-            </p>
-            
-            <div className="border rounded-lg p-4 bg-muted min-h-[200px] overflow-auto">
-              <div 
-                className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ 
-                  __html: response || '<span class="text-muted-foreground">AI response will appear here...</span>'
-                }}
-              />
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <Countdown 
-        isActive={showCountdown}
-        onComplete={countdownHandlers.onComplete}
-        onCancel={countdownHandlers.onCancel}
-      />
-
-      <Modal 
-        isOpen={isOpen} 
-        onOpenChange={onOpenChange}
-        placement="center"
-        hideCloseButton
-        className="dark:bg-dark bg-white p-4"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col text-xl gap-1 px-6 py-4 dark:text-zinc-100 text-zinc-900 border-b dark:border-zinc-700 border-zinc-200">
-                Voice Settings
-              </ModalHeader>
-              <ModalBody className="px-6 py-4">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4 dark:text-zinc-100 text-zinc-900">Speech Rate</h3>
-                    <div className="w-full max-w-md pb-3">
-                      <Slider
-                        size="lg"
-                        step={0.1}
-                        color="primary"
-                        label="Speed"
-                        showTooltip
-                        defaultValue={speechRate}
-                        value={speechRate}
-                        onChange={(value: number | number[]) => {
-                          const newValue = Array.isArray(value) ? value[0] : value;
-                          requestAnimationFrame(() => setSpeechRate(newValue));
-                        }}
-                        minValue={0.4}
-                        maxValue={2.0}
-                        marks={[
-                          { value: 0.5, label: "50%" },
-                          { value: 1.0, label: "100%" },
-                          { value: 1.5, label: "150%" },
-                          { value: 2.0, label: "200%" }
-                        ]}
-                        formatOptions={{ style: "percent" }}
-                        classNames={{
-                          base: "gap-3",
-                          track: "bg-default-500/30 dark:bg-zinc-700",
-                          filler: "bg-primary dark:bg-purple-500",
-                          thumb: "bg-primary dark:bg-purple-900 shadow-lg w-6 h-6 py-5 rounded",
-                          mark: "bg-primary dark:bg-secondary pt-6",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t dark:border-zinc-700 border-zinc-200 my-6 pt-4"></div>
-
-                  <div>
-                    <h3 className="text-xl font-medium mb-4 dark:text-zinc-100 text-zinc-900">Available Voices</h3>
-                    <div className="grid gap-4 max-h-[300px] overflow-y-auto">
-                      {Object.entries(availableVoices).map(([language, data]) => (
-                        <div key={language} className="space-y-2">
-                          <h4 className="font-semibold dark:text-zinc-100 text-zinc-900 border-b dark:border-zinc-700 border-zinc-200 pb-2">{language}</h4>
-                          <div className="grid gap-2">
-                            {data.voices.map((voice) => (
-                              <button
-                                key={voice.id}
-                                onClick={() => {
-                                  setSelectedVoice(voice.id);
-                                  if (response && isSpeaking) {
-                                    speakResponse(response);
-                                  }
-                                }}
-                                className={cn(
-                                  "flex items-center justify-between p-2 rounded-lg",
-                                  selectedVoice === voice.id 
-                                    ? "dark:bg-zinc-700/50 bg-zinc-100" 
-                                    : "dark:hover:bg-zinc-800 hover:bg-zinc-50",
-                                  "dark:text-zinc-100 text-zinc-900"
-                                )}
-                              >
-                                <span className="font-medium">{voice.id}</span>
-                                <span className="text-sm dark:text-zinc-400 text-zinc-500">
-                                  {voice.gender} {voice.neural ? "• Neural" : ""}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 dark:bg-zinc-800 bg-zinc-100 dark:hover:bg-zinc-700 hover:bg-zinc-200 dark:text-zinc-100 text-zinc-900"
-                      onClick={() => {
-                        handleSendEmail();
-                        onClose();
-                      }}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email Response
-                    </Button>
-                    <Button
-                      className="flex-1 dark:bg-zinc-800 bg-zinc-100 dark:hover:bg-zinc-700 hover:bg-zinc-200 dark:text-zinc-100 text-zinc-900"
-                      onClick={() => {
-                        handleSendText();
-                        onClose();
-                      }}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Text Response
-                    </Button>
+            <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              {thread.length === 0 && (
+                <div className="rounded-2xl border border-gray-200 bg-white/60 p-4 text-center text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 sm:p-6">
+                  Start a conversation. Scratch pad and extra text boxes are gone — just chat.
+                </div>
+              )}
+              {thread.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[90%] break-words rounded-2xl px-3 py-3 text-sm sm:max-w-[80%] sm:px-4",
+                      message.role === "user"
+                        ? "bg-black text-white"
+                        : "border border-gray-200 bg-white text-black dark:border-white/10 dark:bg-white/5 dark:text-gray-100",
+                    )}
+                  >
+                    {message.role === "assistant" && message.text.includes("<") ? (
+                      <div dangerouslySetInnerHTML={{ __html: message.text || (isLoading ? "…" : "") }} />
+                    ) : (
+                      message.text || (isLoading ? "…" : "")
+                    )}
                   </div>
                 </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button 
-                  className="dark:bg-zinc-800 bg-zinc-100 dark:hover:bg-zinc-700 hover:bg-zinc-200 dark:text-zinc-100 text-zinc-900"
-                  onClick={onClose}
+              ))}
+              {isLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Spinner size="sm" /> Thinking…
+                </div>
+              )}
+            </div>
+
+            <form className="border-t border-gray-200 px-4 py-4 dark:border-white/10 sm:px-5" onSubmit={(event) => void handleSubmit(undefined, event)}>
+              <div className="flex items-end gap-2 sm:gap-3">
+                <textarea
+                  rows={2}
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      void handleSubmit();
+                    }
+                  }}
+                  placeholder="What do you want to know?"
+                  aria-label="What do you want to know?"
+                  className="min-h-[52px] flex-1 resize-none rounded-2xl border-0 bg-gray-100 px-4 py-3 text-sm text-black placeholder:text-gray-500 shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 dark:bg-white/5 dark:text-white dark:placeholder:text-gray-400"
+                />
+                <Button
+                  color="default"
+                  className="min-w-11 bg-black px-3 text-white sm:min-w-20 sm:px-4"
+                  type="button"
+                  isDisabled={isLoading || status === "loading"}
+                  isIconOnly
+                  aria-label="Send"
+                  onPress={() => void handleSubmit()}
                 >
-                  Close
+                  <Send className="h-4 w-4" />
                 </Button>
+              </div>
+              <p className="mt-3 text-center text-xs text-gray-500">{DISCLAIMER}</p>
+            </form>
+          </CardBody>
+        </Card>
+      </div>
+
+      <Modal
+        isOpen={showSettings}
+        onOpenChange={setShowSettings}
+        placement="center"
+        backdrop="opaque"
+        isDismissable
+        closeButton={
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-dark-6 text-white">
+            <X className="h-4 w-4" aria-hidden />
+          </span>
+        }
+        classNames={{
+          backdrop: "bg-black/80",
+          base: "border border-white/15 bg-dark-6 text-white opacity-100",
+          header: "pr-14 border-b border-white/10 text-white",
+          body: "bg-dark-6 text-white py-6",
+          footer: "border-t border-white/10 bg-dark-6",
+          closeButton: "right-3 top-3 left-auto z-30 text-white hover:bg-white/10",
+        }}
+      >
+        <ModalContent className="bg-dark-6">
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-white">Voice settings</ModalHeader>
+              <ModalBody className="gap-8 bg-dark-6">
+                <Slider
+                  label="Speech rate"
+                  step={0.1}
+                  minValue={0.4}
+                  maxValue={2}
+                  value={speechRate}
+                  getValue={(value) => `${Array.isArray(value) ? value[0] : value}x`}
+                  onChange={(value) => {
+                    const next = Array.isArray(value) ? value[0] : value;
+                    if (typeof next === "number") setSpeechRate(clampSpeechRate(next));
+                  }}
+                  classNames={{
+                    base: "max-w-full",
+                    label: "text-sm text-white",
+                    value: "text-sm text-white",
+                    trackWrapper: "mt-2",
+                    track: "h-2 bg-dark-2 border-s-0 border-x-0",
+                    filler: "bg-black",
+                    thumb: "h-5 w-5 bg-white border-2 border-black after:bg-white",
+                    mark: "hidden",
+                  }}
+                />
+                <div className="flex items-center gap-4">
+                  <span className="w-14 shrink-0 text-sm font-medium text-white">Voice</span>
+                  <Select
+                    aria-label="Voice"
+                    selectedKeys={new Set([selectedVoice])}
+                    disallowEmptySelection
+                    className="flex-1"
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0];
+                      if (typeof value === "string" && value) setSelectedVoice(value);
+                    }}
+                    classNames={{
+                      trigger: "h-12 bg-dark text-white data-[hover=true]:bg-dark-7",
+                      value: "text-white",
+                      popoverContent: "bg-dark-6 text-white border border-white/15",
+                      listbox: "bg-dark-6 text-white",
+                    }}
+                  >
+                    {VOICES.map((voice) => (
+                      <SelectItem key={voice.id} textValue={voice.label} className="text-white data-[hover=true]:bg-dark">
+                        {voice.label}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </div>
+              </ModalBody>
+              <ModalFooter className="bg-dark-6">
+                <Button variant="flat" onPress={onClose}>Close</Button>
               </ModalFooter>
             </>
           )}
@@ -1104,4 +385,4 @@ export default function AssistantPage() {
       </Modal>
     </div>
   );
-} 
+}

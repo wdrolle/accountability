@@ -80,7 +80,7 @@ const VOICES = [
 ];
 
 // Helper function to clean and wrap text in SSML
-function prepareSSML(text: string): string {
+function prepareSSML(text: string, rate = 1): string {
   // Remove any existing SSML tags
   text = text.replace(/<[^>]*>/g, '');
   
@@ -92,13 +92,13 @@ function prepareSSML(text: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-  // Add prosody tag for speech rate and proper SSML tags
-  return `<speak><prosody rate="100%">${text}</prosody></speak>`;
+  const percent = Math.round(Math.min(2, Math.max(0.4, Number(rate) || 1)) * 100);
+  return `<speak><prosody rate="${percent}%">${text}</prosody></speak>`;
 }
 
 export async function POST(request: Request) {
   try {
-    const { text, voice = 'Joanna' } = await request.json();
+    const { text, voice = 'Joanna', rate = 1 } = await request.json();
     console.log('TTS request received:', { voice, textLength: text?.length });
     
     if (!text) {
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     console.log('Using voice:', voiceDetails);
 
     const params: SynthesizeSpeechCommandInput = {
-      Text: prepareSSML(text),
+      Text: prepareSSML(text, rate),
       TextType: "ssml" as TextType,
       OutputFormat: 'mp3' as OutputFormat,
       VoiceId: voice as VoiceId,

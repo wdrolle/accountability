@@ -21,17 +21,17 @@ const Footer = () => {
           <div className="footer-bg-gradient h-[13px] w-full"></div>
         </div>
 
-        <div className="relative mx-auto max-w-[1170px] px-4 pt-17.5 sm:px-8 xl:px-0">
+        <div className="relative mx-auto max-w-[1170px] px-4 pt-12 sm:px-8 sm:pt-17.5 xl:px-0">
           <div className="footer-divider-gradient absolute left-0 top-0 h-[1px] w-full"></div>
 
           <div className="flex flex-wrap justify-between">
             <div className="mb-10 w-full max-w-[520px]">
-              <Link href="/" className="mb-8.5 inline-block">
-                <Image src={logo} alt="Logo" width={164} height={36} />
+              <Link href="/" className="mb-6 inline-block sm:mb-8.5">
+                <Image src={logo} alt="Logo" width={140} height={31} className="h-8 w-auto" />
               </Link>
 
               <p className="mb-12 xl:w-4/5">
-                Welcome to CStudios Messaging and Blog! Receive CStudios messages and explore insightful blog posts to inspire and uplift your spirit.
+                Amorolle Journal is a private writing space with AI assistance for reflection, reminders, lists, and everyday follow-through. It is not a mental health provider.
               </p>
 
               <div className="flex items-center gap-5">
@@ -104,7 +104,7 @@ const Footer = () => {
               </div>
 
               <p className="mt-5.5 font-medium">
-                WDR Consulting, Inc. All rights reserved.
+                Amo & Rolle, LLC. All rights reserved.
               </p>
             </div>
 

@@ -5,6 +5,7 @@ import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import { compare } from "bcryptjs";
+import { authCookieOptions, useSecureAuthCookies } from "@/lib/auth-cookie-security";
 
 declare module "next-auth" {
   interface User {
@@ -26,16 +27,29 @@ declare module "next-auth" {
   }
 }
 
+const providers: AuthOptions["providers"] = [];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  );
+}
+
+if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
+  providers.push(
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    }),
+  );
+}
+
 export const authOptions: AuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-    }),
+    ...providers,
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -134,29 +148,42 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        const dbUser = await prisma.users.findUnique({
-          where: {
-            email: session.user.email || undefined
-          },
-          select: {
-            id: true,
-            role: true,
-            is_super_admin: true
-          }
-        });
+        session.user.id = (token.id as string) || session.user.id;
+        session.user.role = (token.role as string) || session.user.role;
+        session.user.is_super_admin = Boolean(token.is_super_admin);
+        try {
+          const dbUser = await prisma.users.findUnique({
+            where: {
+              email: session.user.email || undefined
+            },
+            select: {
+              id: true,
+              role: true,
+              is_super_admin: true
+            }
+          });
 
-        if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.role = dbUser.role?.toString() || undefined;
-          session.user.is_super_admin = dbUser.is_super_admin || false;
+          if (dbUser) {
+            session.user.id = dbUser.id;
+            session.user.role = dbUser.role?.toString() || session.user.role;
+            session.user.is_super_admin = dbUser.is_super_admin || session.user.is_super_admin || false;
+          }
+        } catch (error) {
+          console.error("session auth.users lookup:", error);
         }
       }
       return session;
     }
   },
   pages: {
-    signIn: '/auth/login'
-  }
+    signIn: '/api/auth/hub-signin',
+  },
+  session: {
+    strategy: 'jwt',
+  },
+  useSecureCookies: useSecureAuthCookies(),
+  cookies: authCookieOptions(),
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

@@ -2,6 +2,8 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep local `next dev` out of production `.next` so live pm2 is not overwritten.
+  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || "/accountability",
   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "/accountability",
   reactStrictMode: true,
@@ -24,6 +26,8 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: [
         'localhost:3001',
+        'amorolle.com',
+        'www.amorolle.com',
         '3000-01jgesrqxqw7pr48rhr6s37tms.cloudspaces.litng.ai'
       ]
     },
@@ -73,13 +77,67 @@ const nextConfig = {
     return [
       {
         source: "/",
-        destination: "/date-accountability",
+        destination: "/journal",
+        permanent: false,
+      },
+      {
+        source: "/about-zoe",
+        destination: "/about",
+        permanent: true,
+      },
+      {
+        source: "/ai-services",
+        destination: "/journal",
+        permanent: false,
+      },
+      {
+        source: "/date-accountability",
+        destination: "/journal",
+        permanent: false,
+      },
+      {
+        source: "/date-accountability/:path*",
+        destination: "/journal/:path*",
+        permanent: false,
+      },
+      {
+        source: "/prayer-guidance",
+        destination: "/journal",
+        permanent: false,
+      },
+      {
+        source: "/journal/spiritual-guidance",
+        destination: "/journal/journal",
+        permanent: false,
+      },
+      {
+        source: "/journal/daily-devotionals",
+        destination: "/journal/journal",
+        permanent: false,
+      },
+      {
+        source: "/journal/generate-message",
+        destination: "/ai/assistant",
+        permanent: false,
+      },
+      {
+        source: "/journal/demo",
+        destination: "/journal",
         permanent: false,
       },
     ];
   },
   async rewrites() {
-    return [];
+    return [
+      {
+        source: "/journal",
+        destination: "/date-accountability",
+      },
+      {
+        source: "/journal/:path*",
+        destination: "/date-accountability/:path*",
+      },
+    ];
   },
   serverRuntimeConfig: {
     port: 3001

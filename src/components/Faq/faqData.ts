@@ -3,33 +3,33 @@ import { FAQ } from "@/types/faq";
 const faqData: FAQ[] = [
   {
     id: 74,
-    question: "What Is CStudios Content Writing Tool?",
+    question: "What is Amorolle Journal?",
     answer:
-      "The CStudios Content Writing Tool is a powerful platform designed to help you generate inspiring scripture-based content effortlessly. Whether you're creating daily messages, blog posts, or social media updates, our tool leverages advanced AI to craft meaningful and uplifting content that resonates with your faith community.",
+      "A private journaling app with optional AI assistance. You write entries; with your consent the assistant can notice patterns, send reminders, and help with lists, bills, and next steps. It is not a mental health provider and does not diagnose.",
   },
   {
     id: 100,
-    question: "Is there a limit on how much content I can generate?",
+    question: "Does the AI read everything I write?",
     answer:
-      "Content generation limits vary by subscription tier. The Basic plan includes essential features with moderate usage. The standard plan offers expanded capabilities for family groups. The Friends and Family plan provides unlimited content generation for your entire group, including messages, blog posts, and social media updates. Each tier ensures your faith community receives fresh and relevant content tailored to your needs.",
+      "Only if you opt in to AI insights. You can mark any entry as private so it is excluded from analysis, recaps, and texts. Crisis-related writing is also kept out of normal insight processing.",
   },
   {
     id: 7,
-    question: "Is it helpful for any church or ministry?",
+    question: "Is this a replacement for therapy?",
     answer:
-      "Yes, the CStudios Content Writing Tool is designed to be a valuable resource for churches and ministries. It allows you to generate engaging content for your congregation, helping you spread the word of God and inspire your community.",
+      "No. The journal can support reflection and everyday organization, but it is not therapy, does not diagnose, and is not a substitute for professional care. If you are in crisis, call or text 988.",
   },
   {
     id: 67,
-    question: "What will I get from using CStudios?",
+    question: "What can the assistant help with?",
     answer:
-      "The CStudios Content Writing Tool is designed to help you generate engaging content for your congregation, helping you spread the word of God and inspire your community.",
+      "Recaps, gentle observations, reminders, research requests, and life organization such as to-dos, shopping lists, and bill due dates — confirmed with you before anything is added on your behalf.",
   },
   {
     id: 9,
-    question: "How do I use CStudios?",
+    question: "How do I get started?",
     answer:
-      "The CStudios Content Writing Tool is designed to help you generate engaging content for your congregation, helping you spread the word of God and inspire your community.",
+      "Sign in through Amorolle, open Journal, and write your first entry. You can add a mood, tags, and choose whether that entry can be used for AI insights.",
   },
   {
     id: 10,

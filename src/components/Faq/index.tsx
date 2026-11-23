@@ -21,9 +21,9 @@ const Faq = () => {
 
       <div className="mx-auto max-w-[770px] px-4 sm:px-8 xl:px-0">
         <SectionTitle
-          subTitle="Questions About our CStudios?"
+          subTitle="Questions about the journal?"
           title="Frequently Asked Questions"
-          paragraph="Welcome to CStudios Messaging and Blog! Receive CStudios messages and explore insightful blog posts to inspire and uplift your spirit."
+          paragraph="A private journal with optional AI assistance for insights, reminders, and everyday lists. Not a therapy replacement — in a crisis, call or text 988."
         />
 
         <div className="wow fadeInUp">

@@ -1,0 +1,95 @@
+/* DatePicker container */
+.react-datepicker {
+  @apply bg-dark border border-white/20 text-white font-plus-jakarta;
+  display: flex !important;
+}
+
+/* DatePicker input */
+.react-datepicker__input-container input {
+  @apply bg-transparent border border-white/20 rounded-lg px-4 py-2 text-white w-full focus:border-purple focus:outline-none focus:ring-2 focus:ring-purple/20;
+}
+
+/* Time container */
+.react-datepicker__time-container {
+  @apply border-l border-white/20 w-24;
+}
+
+/* Time list */
+.react-datepicker__time-list {
+  @apply bg-dark text-white h-[230px] !important;
+}
+
+/* Time list item */
+.react-datepicker__time-list-item {
+  @apply hover:bg-white/10 text-white px-4 py-1;
+}
+
+.react-datepicker__time-list-item--selected {
+  @apply bg-purple text-white hover:bg-purple/80 !important;
+}
+
+/* Header */
+.react-datepicker__header {
+  @apply bg-dark border-b border-white/20 text-white;
+}
+
+/* Current month */
+.react-datepicker__current-month {
+  @apply text-white mb-2;
+}
+
+/* Navigation */
+.react-datepicker__navigation-icon::before {
+  @apply border-white/60;
+}
+
+/* Day names */
+.react-datepicker__day-name {
+  @apply text-white/60;
+}
+
+/* Days */
+.react-datepicker__day {
+  @apply text-white hover:bg-white/10 rounded;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-purple text-white hover:bg-purple/80 !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-purple/50 text-white;
+}
+
+/* Today */
+.react-datepicker__day--today {
+  @apply font-bold text-purple;
+}
+
+/* Outside month */
+.react-datepicker__day--outside-month {
+  @apply text-white/40;
+}
+
+/* Calendar container */
+.react-datepicker__month-container {
+  @apply w-64;
+}
+
+/* Make the calendar and time picker side by side */
+.react-datepicker-popper {
+  @apply z-50;
+}
+
+/* Time container */
+.react-datepicker__time-container {
+  @apply w-24 border-l border-white/20;
+}
+
+.react-datepicker__time-container .react-datepicker__time {
+  @apply bg-dark;
+}
+
+.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box {
+  @apply w-full;
+} 

@@ -1,64 +1,25 @@
-// src/app/(site)/account/profile/page.tsx
-
 'use client';
 
-import React, { useState, useEffect, Suspense, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import {
   Button,
   Select,
-  Input,
+  SelectItem,
   Avatar,
-  TimeInput,
-  type DateValue,
-  type DatePickerProps,
-  type CalendarDate
 } from "@heroui/react";
 import Breadcrumb from '../../../../components/Breadcrumb';
-import { Upload, Edit2, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getUserImageUrl, DEFAULT_USER_IMAGE, SUPABASE_BUCKET_URL, USER_IMAGES_BUCKET } from '@/lib/constants';
-import Link from 'next/link';
+import { Upload, Edit2, X } from 'lucide-react';
+import { DEFAULT_USER_IMAGE, SUPABASE_BUCKET_URL, USER_IMAGES_BUCKET } from '@/lib/constants';
 import ImageGallery from '@/components/ImageGallery';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import dayjs from 'dayjs';
-import type { Selection } from "@heroui/react";
-import { today, parseDate, getLocalTimeZone, Time } from '@internationalized/date';
-
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-  },
-});
-
-const lightTheme = createTheme({
-  palette: {
-    mode: 'light',
-  },
-});
-
-export const agents_VERSIONS = [
-  { id: 'DeepSeek-Coding', name: 'DeepSeek-Coding' },
-  { id: 'DeepSeek-Chat', name: 'DeepSeek-Chat' },
-  { id: 'DeepSeek-Code', name: 'DeepSeek-Code' },
-  { id: 'DeepSeek-Code-Pro', name: 'DeepSeek-Code-Pro' },
-  { id: 'DeepSeek-Code-Pro-Plus', name: 'DeepSeek-Code-Pro-Plus' },
-  { id: 'Llama-3.1-70B-Instruct', name: 'Llama-3.1-70B-Instruct' },
-  { id: 'Llama-3.1-8B-Instruct', name: 'Llama-3.1-8B-Instruct' },
-  { id: 'Llama-3.1-405B-Instruct', name: 'Llama-3.1-405B-Instruct' },
-  { id: 'Llama-3.1-70B-Instruct', name: 'Llama-3.1-70B-Instruct' },
-  { id: 'Llama-3.1-8B-Instruct', name: 'Llama-3.1-8B-Instruct' },
-  { id: 'Llama-3.1-405B-Instruct', name: 'Llama-3.1-405B-Instruct' },
-];
-
+import { appApiUrl } from '@/lib/journal';
+import { heroSelectClassNames, heroSelectPopoverProps, listIanaTimezones } from '@/lib/utils';
 
 interface Timezone {
   value: string;
   label: string;
-  utc_offset: string;
+  utc_offset?: string;
 }
 
 interface UserProfile {
@@ -69,9 +30,7 @@ interface UserProfile {
   phone: string | null;
   role: string;
   subscription_status: string;
-  subscription_plan: 'STARTER' | 'PREMIUM' | 'FAMILY';
   created_at: string;
-  agents_version?: string;
   image?: string;
   timezone?: string;
   text_message_time?: string;
@@ -82,71 +41,25 @@ interface UserImage {
   createdAt: string;
 }
 
-interface TimezoneOption {
-  readonly value: string;
-  readonly label: string;
+function readableName(first?: string | null, last?: string | null) {
+  const firstName = first && !first.includes('@') ? first.trim() : '';
+  const lastName = last && !last.includes('@') ? last.trim() : '';
+  return [firstName, lastName].filter(Boolean).join(' ');
 }
 
-const customStyles = {
-  control: (base: any, state: any) => ({
-    ...base,
-    backgroundColor: 'rgb(255 255 255 / 0.85)',
-    borderColor: state.isFocused ? 'rgb(59 130 246 / 0.2)' : 'rgb(255 255 255 / 0.85)',
-    boxShadow: state.isFocused ? '0 0 0 1px rgb(59 130 246 / 0.2)' : 'none',
-    padding: '0.75rem',
-    '&:hover': {
-      borderColor: 'rgb(59 130 246 / 0.2)'
-    },
-    '.dark &': {
-      backgroundColor: 'rgb(0 0 0 / 0.05)',
-      borderColor: state.isFocused ? 'rgb(59 130 246 / 0.2)' : 'rgb(255 255 255 / 0.1)'
-    }
-  }),
-  menu: (base: any) => ({
-    ...base,
-    backgroundColor: 'rgb(255 255 255 / 0.85)',
-    border: '1px solid rgb(255 255 255 / 0.85)',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    '.dark &': {
-      backgroundColor: 'rgb(0 0 0 / 0.05)',
-      border: '1px solid rgb(255 255 255 / 0.1)'
-    }
-  }),
-  option: (base: any, state: any) => ({
-    ...base,
-    backgroundColor: state.isFocused ? 'rgb(59 130 246 / 0.85)' : 'rgb(255 255 255 / 0.85)',
-    color: '#1e293b',
-    cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: 'rgb(59 130 246 / 0.85)',
-    },
-    '.dark &': {
-      backgroundColor: state.isFocused ? 'rgb(59 130 246 / 0.85)' : 'rgb(0 0 0 / 0.85)',
-      color: '#f8fafc'
-    }
-  }),
-  singleValue: (base: any) => ({
-    ...base,
-    color: '#1e293b',
-    '.dark &': {
-      color: '#f8fafc'
-    }
-  }),
-  input: (base: any) => ({
-    ...base,
-    color: '#1e293b',
-    '.dark &': {
-      color: '#f8fafc'
-    }
-  })
-};
+const quietInputClass =
+  'h-12 w-full rounded-lg border-0 bg-gray-100 px-3 text-sm text-black shadow-none outline-none ring-0 ' +
+  'placeholder:text-gray-400 focus:border-0 focus:outline-none focus:ring-0 focus:shadow-none ' +
+  'focus-visible:border-0 focus-visible:outline-none focus-visible:ring-0 ' +
+  'dark:bg-dark-7 dark:text-white dark:placeholder:text-gray-500';
 
-// Add type for select change event
-type SelectChangeEvent = {
-  target: {
-    value: string;
-  };
-};
+function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-gray-600 dark:text-gray-400">
+      {children}
+    </label>
+  );
+}
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -155,22 +68,16 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [userImages, setUserImages] = useState<UserImage[]>([]);
-  const [timezones, setTimezones] = useState<Timezone[]>([]);
+  const [timezones, setTimezones] = useState<Timezone[]>(listIanaTimezones());
   const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
     phone: '',
-    agents_version: 'DeepSeek-Coding',
     timezone: 'America/New_York',
     text_message_time: '09:00'
   });
-  const [timeValue, setTimeValue] = useState<DateValue | null>(() => {
-    try {
-      return today(getLocalTimeZone());
-    } catch {
-      return null;
-    }
-  });
-  const [timezoneOptions, setTimezoneOptions] = useState<TimezoneOption[]>([]);
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -179,61 +86,46 @@ export default function ProfilePage() {
     }
   }, [session]);
 
-  useEffect(() => {
-    if (profile?.text_message_time) {
-      try {
-        setTimeValue(today(getLocalTimeZone()));
-      } catch {
-        setTimeValue(null);
-      }
-    }
-  }, [profile]);
-
   const fetchTimezones = async () => {
     try {
-      const response = await fetch('/api/timezones');
+      const response = await fetch(appApiUrl('/api/timezones'));
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && Array.isArray(data.timezones) && data.timezones.length > 0) {
         setTimezones(data.timezones);
-        // Create options for react-select with timezone names only
-        const options = data.timezones.map((tz: Timezone) => ({
-          value: tz.value,
-          label: tz.label.split(' (')[0]  // Remove UTC offset from label
-        }));
-        setTimezoneOptions(options);
       }
     } catch (error) {
       console.error('Error fetching timezones:', error);
-      toast.error('Failed to load timezones');
     }
   };
 
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/user/profile');
+      const response = await fetch(appApiUrl('/api/user/profile'));
       const data = await response.json();
       if (response.ok) {
         setProfile(data.user);
         setFormData({
+          first_name: data.user.first_name || '',
+          last_name: data.user.last_name || '',
           phone: data.user.phone || '',
-          agents_version: data.user.agents_version || 'DeepSeek-Coding',
           timezone: data.user.timezone || 'America/New_York',
           text_message_time: data.user.text_message_time || '09:00'
         });
 
-        
-        // Set the profile image directly from the user table
         setProfileImage(
           data.user.image
-            ? `${SUPABASE_BUCKET_URL}${USER_IMAGES_BUCKET}/${data.user.image}`
+            ? data.user.image.startsWith('http')
+              ? data.user.image
+              : `${SUPABASE_BUCKET_URL}${USER_IMAGES_BUCKET}/${data.user.image}`
             : DEFAULT_USER_IMAGE
         );
 
-        // Fetch user images
         if (data.user.id) {
           await fetchUserImages(data.user.id);
         }
+      } else {
+        toast.error(data.error || 'Failed to load profile');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -245,9 +137,9 @@ export default function ProfilePage() {
 
   const fetchUserImages = async (userId: string) => {
     try {
-      const response = await fetch(`/api/user/images?userId=${userId}`);
+      const response = await fetch(appApiUrl(`/api/user/images?userId=${userId}`));
       const data = await response.json();
-      if (response.ok && data.images.length > 0) {
+      if (response.ok && data.images?.length > 0) {
         setUserImages(data.images);
       }
     } catch (error) {
@@ -257,29 +149,25 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (imageUrl: string) => {
     try {
-      // Update local state immediately
       setProfileImage(imageUrl);
-      
-      // Update profile state with the new image
       if (profile) {
         setProfile({
           ...profile,
-          image: imageUrl.split('/user_images/')[1]
+          image: imageUrl
         });
       }
-      
-      // No need to fetch the entire profile again
-      // Just update the user images list if needed
       if (profile?.id) {
         await fetchUserImages(profile.id);
       }
     } catch (error) {
       console.error('Error updating profile picture:', error);
       toast.error('Error updating profile picture');
-      // Revert profile image if there was an error
       if (profile?.image) {
-        const currentImageUrl = `${SUPABASE_BUCKET_URL}${USER_IMAGES_BUCKET}/${profile.image}`;
-        setProfileImage(currentImageUrl);
+        setProfileImage(
+          profile.image.startsWith('http')
+            ? profile.image
+            : `${SUPABASE_BUCKET_URL}${USER_IMAGES_BUCKET}/${profile.image}`
+        );
       }
     }
   };
@@ -300,27 +188,25 @@ export default function ProfilePage() {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('profileImage', file);
+      const uploadData = new FormData();
+      uploadData.append('profileImage', file);
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch(appApiUrl('/api/upload'), {
         method: 'POST',
-        body: formData,
+        body: uploadData,
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Update local state immediately
         if (data.url) {
           setProfileImage(data.url);
           if (profile) {
             setProfile({
               ...profile,
-              image: data.url.split('/user_images/')[1]
+              image: data.url
             });
           }
-          // Update user images list
           if (profile?.id) {
             await fetchUserImages(profile.id);
           }
@@ -328,9 +214,6 @@ export default function ProfilePage() {
         toast.success('Image uploaded successfully');
       } else {
         toast.error(data.error || 'Failed to upload image');
-        if (data.details) {
-          console.error('Upload error details:', data.details);
-        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -342,25 +225,19 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
-      // Default time if timeValue is null
-      const timeString = timeValue 
-        ? dayjs(new Date(timeValue.toString())).format('HH:mm')
-        : formData.text_message_time;
-      
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch(appApiUrl('/api/user/profile'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          text_message_time: timeString
-        }),
+        body: JSON.stringify(formData),
       });
 
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        throw new Error(data.error || 'Failed to update profile');
       }
 
       toast.success('Profile updated successfully');
@@ -368,275 +245,248 @@ export default function ProfilePage() {
       fetchProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const handleTimezoneChange = (option: TimezoneOption | null) => {
-    if (option) {
-      setFormData({ ...formData, timezone: option.value });
-    }
-  };
-
-  const onTimeChange = (newTime: dayjs.Dayjs | null) => {
-    if (!newTime) return;
-    
-    const timeString = newTime.format('HH:mm');
-    try {
-      setTimeValue(today(getLocalTimeZone()));
-    } catch {
-      setTimeValue(null);
-    }
-    setFormData(prev => ({
-      ...prev,
-      text_message_time: timeString
-    }));
   };
 
   if (!session) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-xl">Please Log In to view your profile</p>
+        <p className="text-xl text-black dark:text-white">Please log in to view your profile</p>
       </div>
     );
   }
 
-  if (isLoading || !profile || profileImage === null) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-xl">Loading...</p>
+        <p className="text-xl text-black dark:text-white">Loading...</p>
       </div>
     );
   }
+
+  if (!profile) {
+    return (
+      <>
+        <Breadcrumb pageTitle="Profile" align="left" />
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <p className="text-xl text-black dark:text-white">Could not load your profile. Try refreshing.</p>
+        </div>
+      </>
+    );
+  }
+
+  const resolvedImage = profileImage || DEFAULT_USER_IMAGE;
+  const displayName =
+    readableName(
+      isEditing ? formData.first_name : profile.first_name,
+      isEditing ? formData.last_name : profile.last_name
+    ) || 'Journal account';
+
+  const timezoneLabel =
+    timezones.find((tz) => tz.value === profile.timezone)?.label ||
+    profile.timezone ||
+    'America/New_York';
 
   return (
     <>
-      <Breadcrumb pageTitle="Profile" />
-      <section className="relative z-10 overflow-hidden pt-[80px] pb-16 md:pt-[100px] md:pb-[120px] xl:pt-[120px] xl:pb-[160px] 2xl:pt-[50px] 2xl:pb-[200px]">
-        <div className="container">
-          <div className="wow fadeInUp" data-wow-delay=".1s">
-            <div className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] rounded-lg relative z-10 overflow-hidden border-2 border-gray-300/20 dark:border-gray-600/20 shadow-lg p-8 sm:p-12 lg:px-8 xl:p-12"
-              style={{
-                transform: 'perspective(1000px) rotateX(2deg)',
-                boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              <div className="max-w-[1200px] mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                  <div className="flex flex-col items-center text-center">
-                    <h1 className="text-4xl font-bold text-black dark:text-white mb-8">
-                      {profile.first_name && profile.last_name
-                        ? `${profile.first_name} ${profile.last_name}`
-                        : 'User'}
-                    </h1>
-                    <div className="relative mb-4">
-                      <Avatar
-                        src={profileImage}
-                        alt={profile.first_name || 'User'}
-                        size="lg"
-                        className="h-48 w-48"
-                      />
-                    </div>
-                    <label 
-                      htmlFor="profile-image" 
-                      className="hero-button-gradient rounded-lg px-6 py-3 light:text-white dark:text-white inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity mt-4"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Profile Picture
-                      <input
-                        type="file"
-                        id="profile-image"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        disabled={isUploading}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-8">
-                      <h2 className="text-2xl font-bold text-black dark:text-white">Profile Information</h2>
-                      <button
-                        onClick={() => setIsEditing(!isEditing)}
-                        className="hero-button-gradient rounded-lg px-4 py-2 text-white inline-flex items-center gap-2 hover:opacity-80"
-                      >
-                        {isEditing ? (
-                          <>
-                            <X className="w-4 h-4 text-white" />
-                            <span className="light:text-white dark:text-white">Cancel</span>
-                          </>
-                        ) : (
-                          <>
-                            <Edit2 className="w-4 h-4 text-white" />
-                            <span className="light:text-white dark:text-white">Edit Profile</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    {isEditing ? (
-                      <form onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                          <div className="space-y-6">
-                            <Input
-                              type="tel"
-                              value={formData.phone}
-                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                              label="Phone"
-                              placeholder="+1234567890"
-                              className="w-full"
-                            />
-                          </div>
-
-                          <div className="space-y-6">
-                            <Select
-                              value={formData.agents_version}
-                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
-                                setFormData({ ...formData, agents_version: e.target.value })}
-                              label="agents Version"
-                            >
-                              {agents_VERSIONS.map((version) => (
-                                <option key={version.id} value={version.id}>
-                                  {version.name}
-                                </option>
-                              ))}
-                            </Select>
-                            <Select
-                              value={formData.timezone}
-                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
-                                setFormData({ ...formData, timezone: e.target.value })}
-                              label="Timezone"
-                            >
-                              {timezoneOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </Select>
-                            <div className="mb-4.5">
-                              <label className="mb-2.5 block text-black dark:text-white">
-                                Daily Text Message Time <span className="text-meta-1">*</span>
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <div className="w-[150px]">
-                                  <TimeInput
-                                    value={new Time(
-                                      parseInt(formData.text_message_time.split(':')[0]),
-                                      parseInt(formData.text_message_time.split(':')[1])
-                                    )}
-                                    variant="bordered"
-                                    size="md"
-                                    radius="md"
-                                    hourCycle={24}
-                                    granularity="minute"
-                                    labelPlacement="outside"
-                                    onChange={(value: Time | null) => {
-                                      if (value) {
-                                        const timeString = `${value.hour.toString().padStart(2, '0')}:${value.minute.toString().padStart(2, '0')}`;
-                                        setFormData(prev => ({
-                                          ...prev,
-                                          text_message_time: timeString
-                                        }));
-                                      }
-                                    }}
-                                    classNames={{
-                                      base: "w-full",
-                                      input: "bg-transparent backdrop-blur-sm bg-[url(/images/cta/grid.svg)] border-2 border-gray-300/20 dark:border-gray-600/20 rounded-lg p-4",
-                                      innerWrapper: "shadow-inner"
-                                    }}
-                                  />
-                                </div>
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                  ({formData.timezone})
-                                </span>
-                              </div>
-                              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                Choose when you'd like to receive your daily text messages.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button
-                          type="submit"
-                          className="mt-6"
-                          color="primary"
-                        >
-                          Save Changes
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                        <div className="space-y-6">
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Email</p>
-                            <p className="text-black dark:text-white font-medium">{profile?.email}</p>
-                          </div>
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Phone</p>
-                            <p className="text-black dark:text-white font-medium">{profile?.phone || 'Not set'}</p>
-                          </div>
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Account Type</p>
-                            <p className="text-black dark:text-white font-medium">{profile?.role}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-6">
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">agents Version</p>
-                            <p className="text-black dark:text-white font-medium">
-                              {agents_VERSIONS.find(v => v.id === profile?.agents_version)?.name || 'King James Version'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Time Zone</p>
-                            <p className="text-black dark:text-white font-medium">
-                              {timezones.find(tz => tz.value === profile?.timezone)?.label.split(' (')[0] || 'America/New_York'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Daily Message Time</p>
-                            <p className="text-black dark:text-white font-medium">
-                              {profile?.text_message_time || '09:00'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-body-color dark:text-gray-400">Member Since</p>
-                            <p className="text-black dark:text-white font-medium">
-                              {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Not available'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {userImages.length > 0 && (
-                  <div className="relative mt-12 pt-8 border-t border-gray-300/20 dark:border-gray-600/20">
-                    <h3 className="text-xl font-semibold text-black dark:text-white mb-6 text-center">Your Gallery</h3>
-                    <ImageGallery 
-                      images={userImages.map(img => ({
-                        id: img.url,
-                        file_url: img.url,
-                        filename: img.url.split('/').pop() || 'image'
-                      }))}
-                      onUpdateProfile={handleUpdateProfile}
-                      currentProfileImage={profileImage}
+      <Breadcrumb pageTitle="Profile" align="left" />
+      <section className="relative z-10 overflow-x-hidden px-4 pb-12 pt-2 sm:pb-16">
+        <div className="container mx-auto max-w-5xl">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-black shadow-lg dark:border-white/10 dark:bg-dark-6 dark:text-white sm:p-8 lg:p-12">
+            <div className="mx-auto max-w-[1200px]">
+              <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="flex flex-col items-center text-center">
+                  <h2 className="mb-1 break-words text-xl font-bold text-black dark:text-white sm:text-2xl">
+                    {displayName}
+                  </h2>
+                  <p className="mb-6 break-words text-sm text-gray-600 dark:text-gray-400 sm:mb-8">
+                    {profile.email}
+                  </p>
+                  <div className="relative mb-4">
+                    <Avatar
+                      src={resolvedImage}
+                      alt={displayName}
+                      size="lg"
+                      className="h-32 w-32 sm:h-48 sm:w-48"
                     />
                   </div>
-                )}
+                  <label
+                    htmlFor="profile-image"
+                    className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-white hover:opacity-80 dark:bg-white/15"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Profile Picture
+                    <input
+                      type="file"
+                      id="profile-image"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={isUploading}
+                    />
+                  </label>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="mb-6 flex flex-col items-start gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-xl font-bold text-black dark:text-white sm:text-2xl">Profile Information</h2>
+                    <Button
+                      onPress={() => setIsEditing(!isEditing)}
+                      className="bg-gray-900 text-white dark:bg-white/15 dark:text-white"
+                      startContent={isEditing ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                    >
+                      {isEditing ? 'Cancel' : 'Edit Profile'}
+                    </Button>
+                  </div>
+
+                  {isEditing ? (
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel htmlFor="profile-first-name">First name</FieldLabel>
+                          <input
+                            id="profile-first-name"
+                            value={formData.first_name}
+                            onChange={(event) => setFormData({ ...formData, first_name: event.target.value })}
+                            className={quietInputClass}
+                          />
+                        </div>
+                        <div>
+                          <FieldLabel htmlFor="profile-last-name">Last name</FieldLabel>
+                          <input
+                            id="profile-last-name"
+                            value={formData.last_name}
+                            onChange={(event) => setFormData({ ...formData, last_name: event.target.value })}
+                            className={quietInputClass}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <FieldLabel htmlFor="profile-phone">Phone</FieldLabel>
+                        <input
+                          id="profile-phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
+                          placeholder="3475550100"
+                          className={quietInputClass}
+                        />
+                      </div>
+                      <div>
+                        <FieldLabel htmlFor="profile-timezone">Time zone</FieldLabel>
+                        <Select
+                          id="profile-timezone"
+                          aria-label="Time zone"
+                          variant="flat"
+                          selectedKeys={[formData.timezone]}
+                          onChange={(event) => {
+                            if (event.target.value) {
+                              setFormData({ ...formData, timezone: event.target.value });
+                            }
+                          }}
+                          classNames={{
+                            ...heroSelectClassNames,
+                            trigger:
+                              `${heroSelectClassNames.trigger} h-12 min-h-12 border-0 shadow-none ring-0 ` +
+                              'data-[focus=true]:border-0 data-[focus=true]:shadow-none data-[focus=true]:ring-0 ' +
+                              'data-[open=true]:border-0 data-[open=true]:shadow-none data-[open=true]:ring-0',
+                          }}
+                          popoverProps={heroSelectPopoverProps}
+                        >
+                          {timezones.map((option) => (
+                            <SelectItem key={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </Select>
+                      </div>
+                      <div>
+                        <FieldLabel htmlFor="profile-reminder-time">Daily reminder time</FieldLabel>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="profile-reminder-time"
+                            type="time"
+                            value={formData.text_message_time}
+                            onChange={(event) => setFormData({ ...formData, text_message_time: event.target.value })}
+                            className={`${quietInputClass} w-[160px]`}
+                          />
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            ({formData.timezone})
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          When you want a daily nudge to write in your journal.
+                        </p>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        isLoading={isSaving}
+                        className="bg-gray-900 text-white dark:bg-white/15 dark:text-white"
+                      >
+                        Save Changes
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Email</p>
+                        <p className="font-medium text-black dark:text-white">{profile.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Phone</p>
+                        <p className="font-medium text-black dark:text-white">{profile.phone || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Account type</p>
+                        <p className="font-medium capitalize text-black dark:text-white">{profile.role || 'authenticated'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Journal plan</p>
+                        <p className="font-medium capitalize text-black dark:text-white">
+                          {(profile.subscription_status || 'trial').replaceAll('_', ' ')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Time zone</p>
+                        <p className="font-medium text-black dark:text-white">{timezoneLabel}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Daily reminder time</p>
+                        <p className="font-medium text-black dark:text-white">
+                          {profile.text_message_time || '09:00'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Member since</p>
+                        <p className="font-medium text-black dark:text-white">
+                          {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Not available'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {userImages.length > 0 && (
+                <div className="relative mt-12 border-t border-gray-200 pt-8 dark:border-white/10">
+                  <h3 className="mb-6 text-center text-xl font-semibold text-black dark:text-white">Your Gallery</h3>
+                  <ImageGallery
+                    images={userImages.map((img) => ({
+                      id: img.url,
+                      file_url: img.url,
+                      filename: img.url.split('/').pop() || 'image'
+                    }))}
+                    onUpdateProfile={handleUpdateProfile}
+                    currentProfileImage={resolvedImage}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
     </>
   );
-} 
-
-function fetchUserData() {
-  throw new Error('Function not implemented.');
 }

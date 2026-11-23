@@ -1,6 +1,6 @@
 /**
  * Date Reminder Settings Page
- * Path: /date-accountability/date-reminders
+ * Path: /journal/date-reminders
  * 
  * This page allows users to configure their date reminder preferences,
  * including notification methods and timing.
@@ -59,11 +59,51 @@ interface UserPreferences {
   };
 }
 
+function reminderPrefsFromStored(stored: Record<string, unknown> | null): UserPreferences | null {
+  if (!stored) return null;
+
+  const notification = (stored.notification_preferences as Record<string, unknown>) || {};
+  const dateReminder =
+    (notification.date_reminder_preferences as UserPreferences["date_reminder_preferences"]) ||
+    (stored.date_reminder_preferences as UserPreferences["date_reminder_preferences"]) || {
+      reminder_before_date: false,
+      reminder_after_date: false,
+      reminder_before_hours: 24,
+      reminder_after_hours: 24,
+      feedback_reminder_days: 1,
+    };
+  const feedback =
+    (notification.feedback_preferences as UserPreferences["feedback_preferences"]) ||
+    (stored.feedback_preferences as UserPreferences["feedback_preferences"]) || {
+      allow_anonymous_feedback: false,
+      require_feedback: false,
+      feedback_categories: [],
+    };
+
+  return {
+    id: String(stored.id),
+    user_id: String(stored.user_id),
+    date_reminder_preferences: dateReminder,
+    feedback_preferences: feedback,
+    notification_preferences: {
+      date_reminders: Boolean(notification.date_reminders ?? true),
+      feedback_reminders: Boolean(notification.feedback_reminders ?? true),
+    },
+  };
+}
+
 export default async function DateReminderPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
-    return null;
+    return (
+      <>
+        <Breadcrumb pageTitle="Reminder Settings" />
+        <div className="container mx-auto flex min-h-[40vh] items-center justify-center px-4 py-10 text-center">
+          <p className="text-xl text-black dark:text-white">Please log in to view reminder settings</p>
+        </div>
+      </>
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -74,35 +114,24 @@ export default async function DateReminderPage() {
   });
 
   if (!user) {
-    return null;
+    return (
+      <>
+        <Breadcrumb pageTitle="Reminder Settings" />
+        <div className="container mx-auto flex min-h-[40vh] items-center justify-center px-4 py-10 text-center">
+          <p className="text-xl text-black dark:text-white">Account not found</p>
+        </div>
+      </>
+    );
   }
 
-  // Transform the user preferences to match the expected type
-  const transformedPreferences: UserPreferences | null = user.user_preferences ? {
-    id: user.user_preferences.id,
-    user_id: user.user_preferences.user_id,
-    date_reminder_preferences: (user.user_preferences as any).date_reminder_preferences || {
-      reminder_before_date: false,
-      reminder_after_date: false,
-      reminder_before_hours: 24,
-      reminder_after_hours: 24,
-      feedback_reminder_days: 1
-    },
-    feedback_preferences: (user.user_preferences as any).feedback_preferences || {
-      allow_anonymous_feedback: false,
-      require_feedback: false,
-      feedback_categories: []
-    },
-    notification_preferences: (user.user_preferences as any).notification_preferences || {
-      date_reminders: true,
-      feedback_reminders: true
-    }
-  } : null;
+  const transformedPreferences = reminderPrefsFromStored(
+    user.user_preferences as unknown as Record<string, unknown> | null
+  );
 
   return (
     <>
-      <Breadcrumb pageTitle="Date Reminder Settings" />
-      <div className="container mx-auto py-10">
+      <Breadcrumb pageTitle="Reminder Settings" />
+      <div className="container mx-auto px-4 py-6 sm:py-10">
         <DateReminderForm userPreferences={transformedPreferences} />
       </div>
     </>

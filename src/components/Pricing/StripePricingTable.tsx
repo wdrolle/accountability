@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Script from 'next/script';
 
-const STRIPE_PRICING_TABLE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID || 'prctbl_1QbTR9RugV4BcfiwCchRQ7sT';
-const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51Qb6rVRugV4BcfiwWyh6TRJVuMDqp8iaR8u7KB6oPCzPDtjCB4YT9kHOabhDeT9UPHpjRd2cypJATi0SO2zcWTvs00KCwlGlTa';
+const STRIPE_PRICING_TABLE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID || '';
+const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
 const StripePricingTable = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    STRIPE_PRICING_TABLE_ID && STRIPE_PUBLISHABLE_KEY
+      ? null
+      : 'Pricing table is not configured. Set NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.'
+  );
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
@@ -37,6 +41,7 @@ const StripePricingTable = () => {
 
   // Using a dynamic element to avoid TypeScript errors with custom elements
   const renderPricingTable = () => {
+    if (!STRIPE_PRICING_TABLE_ID || !STRIPE_PUBLISHABLE_KEY) return null;
     return React.createElement('stripe-pricing-table', {
       'pricing-table-id': STRIPE_PRICING_TABLE_ID,
       'publishable-key': STRIPE_PUBLISHABLE_KEY,

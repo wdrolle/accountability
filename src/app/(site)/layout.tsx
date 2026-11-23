@@ -9,6 +9,7 @@ import "../../styles/star.css";
 import "../../styles/tailwind.css";
 import AuthProvider from "../context/AuthContext";
 import ToasterContext from "../context/ToastContext";
+import HubAutoSignIn from "@/components/Auth/HubAutoSignIn";
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { usePathname } from 'next/navigation';
@@ -26,25 +27,23 @@ export default function SiteLayout({
                  pathname === '/privacy' || 
                  pathname === '/terms';
 
-  // Pages where only footer should be hidden
-  const hideFooter = pathname === '/ai-agents';
-
   return (
     <Providers>
       <ThemeProvider>
         <NextTopLoader
-          color="#8646F4"
+          color="#111111"
           crawlSpeed={300}
           showSpinner={false}
           shadow="none"
         />
         <AuthProvider>
           <ToasterContext />
+          <HubAutoSignIn />
           {!hideAll && <Header />}
-          <main className="min-h-screen">
+          <main className="min-h-screen overflow-x-hidden">
             {children}
           </main>
-          {!hideAll && !hideFooter && (
+          {!hideAll && (
             <>
               <Footer />
               <ThemeToggle />

@@ -1,20 +1,7 @@
-import Login from "@/components/Auth/Login";
-import Breadcrumb from "@/components/Breadcrumb";
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Log In | CStudios",
-  description: "This is Log In page for CStudios",
-  // other metadata
-};
+export const dynamic = "force-dynamic";
 
-const LoginPage = () => {
-  return (
-    <>
-      <Breadcrumb pageTitle="Log In" />
-      <Login />
-    </>
-  );
-};
-
-export default LoginPage;
+export default function LoginPage() {
+  redirect("/api/auth/hub-signin?next=/journal");
+}

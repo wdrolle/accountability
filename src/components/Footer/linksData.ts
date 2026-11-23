@@ -3,32 +3,14 @@ import { FooterLink } from "@/types/footerLink";
 export const productsLink: FooterLink[] = [
   {
     id: 1,
-    title: "Features",
-    href: "/features",
-    newTab: false,
-  },
-  {
-    id: 2,
-    title: "Integrations",
-    href: "/integrations",
+    title: "Journal",
+    href: "/journal",
     newTab: false,
   },
   {
     id: 3,
     title: "Pricing",
     href: "/pricing",
-    newTab: false,
-  },
-  // {
-  //   id: 4,
-  //   title: "Changes log",
-  //   href: "#",
-  //   newTab: false,
-  // },
-  {
-    id: 5,
-    title: "Roadmap",
-    href: "/roadmap",
     newTab: false,
   },
 ];
@@ -46,20 +28,8 @@ export const companiesLink: FooterLink[] = [
     href: "/about",
     newTab: false,
   },
-  {
-    id: 54,
-    title: "Meet Zoe",
-    href: "/about-zoe",
-    newTab: false,
-  },
-  {
-    id: 12,
-    title: "Newsletter",
-    href: "/newsletter",
-    newTab: false,
-  },
-  
 ];
+
 export const supportsLink: FooterLink[] = [
   {
     id: 13,
@@ -67,10 +37,4 @@ export const supportsLink: FooterLink[] = [
     href: "/contact",
     newTab: false,
   },
-  {
-    id: 14,
-    title: "Community",
-    href: "/community",
-    newTab: false,
-  }
 ];

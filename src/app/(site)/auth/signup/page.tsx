@@ -1,21 +1,7 @@
-import Signup from "@/components/Auth/Signup";
-import Breadcrumb from "@/components/Breadcrumb";
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Sign up | CStudios",
-  description: "This is Sign up for CStudios",
-  // other metadata
-};
+export const dynamic = "force-dynamic";
 
-const SignupPage = () => {
-  return (
-    <>
-      <Breadcrumb pageTitle="Sign up" />
-
-      <Signup />
-    </>
-  );
-};
-
-export default SignupPage;
+export default function SignupPage() {
+  redirect("/api/auth/hub-signin?next=/journal");
+}

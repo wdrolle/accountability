@@ -9,8 +9,13 @@ import 'react-calendar/dist/Calendar.css';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CStudios",
-  description: "Receive daily agents verses and inspirational messages",
+  title: "Amorolle Journal",
+  description: "A private journal with AI assistance for reflection, reminders, lists, and everyday life.",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

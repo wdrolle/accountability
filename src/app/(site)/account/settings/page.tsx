@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import Breadcrumb from '@/components/Breadcrumb';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Card, CardBody, CardHeader, Select, SelectItem, Checkbox } from '@heroui/react';
+import { appApiUrl } from '@/lib/journal';
+import { heroSelectClassNames, heroSelectPopoverProps } from '@/lib/utils';
 
 interface UserPreferences {
   theme_preferences: string[];
@@ -19,17 +22,24 @@ const messageLengths = [
 ];
 
 const themeOptions = [
-  { value: 'faith', label: 'Faith' },
-  { value: 'hope', label: 'Hope' },
-  { value: 'love', label: 'Love' },
-  { value: 'wisdom', label: 'Wisdom' },
-  { value: 'prayer', label: 'Prayer' },
+  { value: 'reflection', label: 'Reflection' },
+  { value: 'habits', label: 'Habits' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'mood', label: 'Mood' },
+  { value: 'gratitude', label: 'Gratitude' },
 ];
+
+const checkboxClassNames = {
+  base: 'max-w-fit items-center gap-2',
+  wrapper:
+    'h-5 w-5 min-w-5 max-w-5 overflow-hidden rounded-[4px] border-2 border-gray-400 bg-transparent after:bg-black dark:border-white/50 dark:after:bg-white',
+  icon: 'h-3 w-3 text-white dark:text-black',
+  label: 'text-sm text-black dark:text-white',
+};
 
 export default function SettingsPage() {
   const { data: session } = useSession();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -39,7 +49,7 @@ export default function SettingsPage() {
 
   const fetchUserPreferences = async () => {
     try {
-      const response = await fetch('/api/user/preferences');
+      const response = await fetch(appApiUrl('/api/user/preferences'));
       const data = await response.json();
 
       if (response.ok) {
@@ -51,7 +61,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePreferenceChange = async (field: string, value: any) => {
+  const handlePreferenceChange = async (field: string, value: unknown) => {
     if (!preferences) return;
 
     const updatedPreferences = {
@@ -62,7 +72,7 @@ export default function SettingsPage() {
     setPreferences(updatedPreferences);
 
     try {
-      const response = await fetch('/api/user/preferences', {
+      const response = await fetch(appApiUrl('/api/user/preferences'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +94,7 @@ export default function SettingsPage() {
   if (!session) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-xl">Please Log In to view your settings</p>
+        <p className="text-xl text-black dark:text-white">Please log in to view your settings</p>
       </div>
     );
   }
@@ -92,91 +102,70 @@ export default function SettingsPage() {
   return (
     <>
       <Breadcrumb pageTitle="Settings" />
-      <section className="pb-5 pt-5 md:pb-5 md:pt-5 xl:pb-5 xl:pt-5">
-        <div className="container">
-          <div className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] rounded-lg relative z-10 overflow-hidden border-2 border-gray-300/20 dark:border-gray-600/20 p-4 sm:p-8 lg:px-4 xl:p-8"
-            style={{
-              transform: 'perspective(1000px) rotateX(2deg)',
-              boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h4 className="text-2xl font-bold text-black dark:text-white">Settings</h4>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Theme Toggle */}
-                <div className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] rounded-lg relative z-10 overflow-hidden border-2 border-gray-300/20 dark:border-gray-600/20 p-4"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(2deg)',
-                    boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <h3 className="text-xl font-bold text-black dark:text-white mb-4">Theme</h3>
+      <section className="pb-5 pt-5">
+        <div className="container mx-auto max-w-4xl px-4">
+          <Card className="overflow-visible border border-gray-200 bg-gray-50 text-black dark:border-white/10 dark:bg-dark-6 dark:text-white">
+            <CardHeader className="px-4 pt-5 sm:px-6 sm:pt-6">
+              <h4 className="text-2xl font-bold text-black dark:text-white">Settings</h4>
+            </CardHeader>
+            <CardBody className="grid grid-cols-1 gap-6 overflow-visible px-4 pb-6 sm:px-6 sm:pb-8 md:grid-cols-2">
+              <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                <CardBody>
+                  <h3 className="mb-4 text-lg font-semibold text-black dark:text-white">Theme</h3>
                   <div className="flex items-center justify-between">
                     <span className="text-black dark:text-white">Dark Mode</span>
                     <ThemeToggle />
                   </div>
-                </div>
+                </CardBody>
+              </Card>
 
-                {/* Message Length */}
-                <div className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] rounded-lg relative z-10 overflow-hidden border-2 border-gray-300/20 dark:border-gray-600/20 p-4"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(2deg)',
-                    boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <h3 className="text-xl font-bold text-black dark:text-white mb-4">Message Length</h3>
-                  <select
-                    value={preferences?.message_length_preference || 'MEDIUM'}
-                    onChange={(e) => handlePreferenceChange('message_length_preference', e.target.value)}
-                    className="w-full rounded-lg bg-[url(/images/cta/grid.svg)] border-2 border-gray-300/20 dark:border-gray-600/20 p-4 text-black dark:text-white focus:border-primary/20 focus:outline-none focus:ring-1 focus:ring-primary/20 [&>option]:bg-white dark:[&>option]:bg-dark [&>option]:text-black dark:[&>option]:text-white"
-                    style={{
-                      transform: 'perspective(1000px) rotateX(2deg)',
-                      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
+              <Card className="overflow-visible border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70">
+                <CardBody className="overflow-visible">
+                  <h3 className="mb-4 text-lg font-semibold text-black dark:text-white">Check-in length</h3>
+                  <Select
+                    selectedKeys={[preferences?.message_length_preference || 'MEDIUM']}
+                    onChange={(event) => {
+                      if (event.target.value) {
+                        handlePreferenceChange('message_length_preference', event.target.value);
+                      }
                     }}
+                    aria-label="Check-in length"
+                    classNames={heroSelectClassNames}
+                    popoverProps={heroSelectPopoverProps}
                   >
                     {messageLengths.map((length) => (
-                      <option key={length.value} value={length.value}>
-                        {length.label}
-                      </option>
+                      <SelectItem key={length.value}>{length.label}</SelectItem>
                     ))}
-                  </select>
-                </div>
+                  </Select>
+                </CardBody>
+              </Card>
 
-                {/* Theme Preferences */}
-                <div className="backdrop-blur-sm bg-[url(/images/cta/grid.svg)] rounded-lg relative z-10 overflow-hidden border-2 border-gray-300/20 dark:border-gray-600/20 p-4 md:col-span-2"
-                  style={{
-                    transform: 'perspective(1000px) rotateX(2deg)',
-                    boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.1), inset 8px 8px 16px rgba(255,255,255,0.1), 0 4px 24px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <h3 className="text-xl font-bold text-black dark:text-white mb-4">Content Themes</h3>
-                  <div className="space-y-2">
+              <Card className="border border-gray-200 bg-white/70 dark:border-white/10 dark:bg-dark-7/70 md:col-span-2">
+                <CardBody>
+                  <h3 className="mb-4 text-lg font-semibold text-black dark:text-white">Journal themes</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {themeOptions.map((theme) => (
-                      <label key={theme.value} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={preferences?.theme_preferences.includes(theme.value)}
-                          onChange={(e) => {
-                            const updatedThemes = e.target.checked
-                              ? [...(preferences?.theme_preferences || []), theme.value]
-                              : preferences?.theme_preferences.filter((t) => t !== theme.value) || [];
-                            handlePreferenceChange('theme_preferences', updatedThemes);
-                          }}
-                          className="rounded border-gray-300/20 dark:border-gray-600/20 text-primary shadow-sm focus:border-primary/20 focus:ring focus:ring-primary/20 focus:ring-opacity-50"
-                        />
-                        <span className="text-black dark:text-white">{theme.label}</span>
-                      </label>
+                      <Checkbox
+                        key={theme.value}
+                        isSelected={preferences?.theme_preferences?.includes(theme.value)}
+                        onValueChange={(checked) => {
+                          const updatedThemes = checked
+                            ? [...(preferences?.theme_preferences || []), theme.value]
+                            : preferences?.theme_preferences.filter((item) => item !== theme.value) || [];
+                          handlePreferenceChange('theme_preferences', updatedThemes);
+                        }}
+                        classNames={checkboxClassNames}
+                      >
+                        {theme.label}
+                      </Checkbox>
                     ))}
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                </CardBody>
+              </Card>
+            </CardBody>
+          </Card>
         </div>
       </section>
     </>
   );
-} 
+}

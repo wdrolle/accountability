@@ -9,65 +9,33 @@ const menuData: Menu[] = [
   },
   {
     id: 2,
-    title: "About",
+    title: "Journal",
     newTab: false,
-    submenu: [
-      {
-        id: 21,
-        title: "About Us",
-        newTab: false,
-        path: "/about",
-      }
-    ],
+    path: "/journal/journal",
   },
   {
     id: 3,
-    title: "Blog",
+    title: "Insights",
     newTab: false,
-    path: "/blog",
+    path: "/journal/analysis",
   },
   {
-    id: 7,
-    title: "AI Services",
+    id: 4,
+    title: "Lists",
     newTab: false,
-    submenu: [
-      {
-        id: 22,
-        title: "AI Voice Assistant",
-        newTab: false,
-        path: "/ai/assistant",
-      },
-      {
-        id: 23,
-        title: "AI Agents",
-        newTab: false,
-        path: "/ai-agents",
-      },
-      {
-      id: 4,
-      title: "AI Services",
-      path: "/ai-services",
-      newTab: false,
-    },
-      // {
-      //   id: 71,
-      //   title: "Chat Bot",
-      //   newTab: false,
-      //   path: "/ai/chat",
-      // },
-      // {
-      //   id: 72,
-      //   title: "GPT-4",
-      //   newTab: false,
-      //   path: "/ai/gpt4",
-      // },
-      // {
-      //   id: 73,
-      //   title: "Llama 3",
-      //   newTab: false,
-      //   path: "/ai/llama",
-      // }
-    ],
+    path: "/journal/lists",
+  },
+  {
+    id: 5,
+    title: "Reminders",
+    newTab: false,
+    path: "/journal/date-reminders",
+  },
+  {
+    id: 6,
+    title: "About",
+    newTab: false,
+    path: "/about",
   },
   {
     id: 8,
